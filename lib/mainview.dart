@@ -3,7 +3,7 @@ import 'package:lexikon/pages/mainmenu.dart';
 import 'package:lexikon/pages/settings.dart';
 
 class MainView extends StatefulWidget {
-  const new({super.key});
+  const MainView({super.key});
 
   @override
   State<MainView> createState() => _MainViewState();
@@ -14,8 +14,8 @@ class _MainViewState extends State<MainView> {
   int selectedIndex = 0;
 
   final List<Widget> _pages = [
-    MainMenu(),
-    SettingsPage(),
+    const MainMenu(),
+    const SettingsPage(),
   ];
 
   final List<String> _title = [
@@ -42,12 +42,12 @@ class _MainViewState extends State<MainView> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         items: [
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.menu), 
             label: "Menu"
           ),
 
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: "Settings",
           ),
@@ -57,3 +57,4 @@ class _MainViewState extends State<MainView> {
     );
   }
 }
+

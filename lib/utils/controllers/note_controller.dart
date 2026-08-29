@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:lexikon/utils/models/note.dart';
 import 'package:lexikon/utils/repositories/note_repository.dart';
 
@@ -6,8 +7,11 @@ final noteRepositoryProvider = Provider<NoteRepository>((ref) {
   return NoteRepository();
 });
 
-final noteControllerProvider = StateNotifierProvider<NoteController, List<Note>>((ref) {
-  return NoteController(ref.read(noteRepositoryProvider));
+final noteControllerProvider =
+    StateNotifierProvider<NoteController, List<Note>>((ref) {
+  return NoteController(
+    ref.read(noteRepositoryProvider),
+  );
 });
 
 class NoteController extends StateNotifier<List<Note>> {
@@ -17,7 +21,7 @@ class NoteController extends StateNotifier<List<Note>> {
     _loadNotes();
   }
 
-  Future<void> _loadNotes() async {
+  void _loadNotes() {
     state = _noteRepository.getAllNotes();
   }
 
@@ -27,21 +31,21 @@ class NoteController extends StateNotifier<List<Note>> {
 
   Future<void> addNote(Note note) async {
     await _noteRepository.addNote(note);
-    state = _noteRepository.getAllNotes();
+    _loadNotes();
   }
 
   Future<void> updateNote(Note note) async {
     await _noteRepository.updateNote(note);
-    state = _noteRepository.getAllNotes();
+    _loadNotes();
   }
 
   Future<void> deleteNote(String noteId) async {
     await _noteRepository.deleteNote(noteId);
-    state = _noteRepository.getAllNotes();
+    _loadNotes();
   }
 
   Future<void> clearAllNotes() async {
     await _noteRepository.clearAllNotes();
-    state = _noteRepository.getAllNotes();
+    _loadNotes();
   }
 }

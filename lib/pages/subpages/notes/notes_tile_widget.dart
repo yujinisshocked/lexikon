@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lexikon/utils/models/note.dart';
-import 'package:lexikon/utils/services/hive_service.dart';
 
 class NotesTileWidget extends StatelessWidget {
   final Note note;
