@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/mainview.dart';
 import 'package:lexikon/utils/services/hive_service.dart';
 import 'package:lexikon/utils/models/note.dart';
+import 'package:lexikon/pages/subpages/notes/note_list_page.dart';
+import 'package:lexikon/pages/subpages/notes/note_edit_page.dart';
 
 void main() async {
   // Initialize Hive
@@ -32,6 +34,10 @@ class Lexikon extends ConsumerWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const MainView(),
+      routes: {
+        '/note-list': (context) => const NoteListPage(),
+        '/note-edit': (context) => const NoteEditPage(),
+      },
     );
   }
 }
