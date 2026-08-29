@@ -6,6 +6,12 @@ import 'package:lexikon/utils/services/hive_service.dart';
 import 'package:lexikon/utils/models/note.dart';
 import 'package:lexikon/pages/subpages/notes/note_list_page.dart';
 import 'package:lexikon/pages/subpages/notes/note_edit_page.dart';
+import 'package:lexikon/pages/subpages/habits/habit_tracking_page.dart';
+import 'package:lexikon/pages/subpages/scheduling/scheduling_page.dart';
+import 'package:lexikon/pages/subpages/todo/todo_list_page.dart';
+import 'package:lexikon/pages/subpages/shopping/shopping_list_page.dart';
+import 'package:lexikon/pages/subpages/budget/budget_calculator_page.dart';
+import 'package:lexikon/pages/subpages/financial/financial_tracker_page.dart';
 
 void main() async {
   // Initialize Hive
@@ -37,6 +43,12 @@ class Lexikon extends ConsumerWidget {
       routes: {
         '/note-list': (context) => const NoteListPage(),
         '/note-edit': (context) => const NoteEditPage(),
+        '/habit-tracking': (context) => const HabitTrackingPage(),
+        '/scheduling': (context) => const SchedulingPage(),
+        '/todo-list': (context) => const TodoListPage(),
+        '/shopping-list': (context) => const ShoppingListPage(),
+        '/budget-calculator': (context) => const BudgetCalculatorPage(),
+        '/financial-tracker': (context) => const FinancialTrackerPage(),
       },
     );
   }
