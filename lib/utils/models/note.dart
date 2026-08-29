@@ -14,9 +14,8 @@ class Note {
   ///
   /// Example:
   /// [
-  ///   {"insert":"Hello world\n"},
-  ///   {"insert":{"attachment":"abc123"}},
-  ///   {"insert":"More text\n"}
+  ///   {"insert":"Hello\n"},
+  ///   {"insert":{"attachment":"12345"}}
   /// ]
   @HiveField(2)
   final String document;
@@ -28,17 +27,47 @@ class Note {
   final DateTime updatedAt;
 
   /// Attachment ID -> Base64 image data.
-  ///
-  /// The Quill document only contains the attachment ID.
   @HiveField(5)
   final Map<String, String> attachments;
 
-  Note({
+  /// Whether the note is pinned.
+  @HiveField(6)
+  final bool isPinned;
+
+  /// Used to preserve the user's manual ordering.
+  @HiveField(7)
+  final int sortOrder;
+
+  const Note({
     required this.id,
     required this.title,
     required this.document,
     required this.createdAt,
     required this.updatedAt,
     this.attachments = const {},
+    this.isPinned = false,
+    this.sortOrder = 0,
   });
+
+  Note copyWith({
+    String? id,
+    String? title,
+    String? document,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Map<String, String>? attachments,
+    bool? isPinned,
+    int? sortOrder,
+  }) {
+    return Note(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      document: document ?? this.document,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      attachments: attachments ?? this.attachments,
+      isPinned: isPinned ?? this.isPinned,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
 }
