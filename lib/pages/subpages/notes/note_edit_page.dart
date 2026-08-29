@@ -20,6 +20,12 @@ Uint8List _decodeBase64(String base64Data) {
   return Uint8List.fromList(base64Decode(base64Data));
 }
 
+enum _LeaveAction {
+  cancel,
+  discard,
+  save,
+}
+
 class NoteEditPage extends ConsumerStatefulWidget {
   const NoteEditPage({super.key});
 
@@ -28,6 +34,8 @@ class NoteEditPage extends ConsumerStatefulWidget {
 }
 
 class _NoteEditPageState extends ConsumerState<NoteEditPage> {
+
+
   late final QuillController _quillController;
   late final TextEditingController _titleController;
   late final FocusNode _editorFocusNode;
@@ -41,6 +49,10 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   DateTime? _createdAt;
 
+  String? _savedTitle;
+  String? _savedDocument;
+  Map<String, String> _savedAttachments = {};
+
   /// Attachment ID -> Base64.
   ///
   /// This is the temporary working attachment store.
@@ -51,6 +63,89 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   /// Once an image starts decoding, we keep the Future here.
   /// Rebuilding the editor therefore does NOT restart decoding.
   final Map<String, Future<Uint8List>> _decodedImages = {};
+
+  bool _hasUnsavedChanges() {
+    if (!_isEditing) {
+      return false;
+    }
+
+    final currentTitle = _titleController.text;
+
+    final currentDocument = jsonEncode(
+      _quillController.document.toDelta().toJson(),
+    );
+
+    return currentTitle != _savedTitle ||
+        currentDocument != _savedDocument ||
+        !mapEquals(
+          _attachments,
+          _savedAttachments,
+        );
+  }
+
+  Future<bool> _confirmLeave() async {
+    if (!_hasUnsavedChanges()) {
+      return true;
+    }
+
+    final action = await showDialog<_LeaveAction>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Unsaved changes'),
+          content: const Text(
+            'You have unsaved changes to this note. '
+            'Would you like to save them before leaving?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  _LeaveAction.cancel,
+                );
+              },
+              child: const Text('Cancel'),
+            ),
+
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  _LeaveAction.discard,
+                );
+              },
+              child: const Text('Discard'),
+            ),
+
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  _LeaveAction.save,
+                );
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    switch (action) {
+      case _LeaveAction.discard:
+        return true;
+
+      case _LeaveAction.save:
+        await _saveNote();
+
+        return !_hasUnsavedChanges();
+
+      case _LeaveAction.cancel:
+      case null:
+        return false;
+    }
+  }
 
   @override
   void initState() {
@@ -654,51 +749,43 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
     return FutureBuilder<Uint8List>(
       future: future,
       builder: (context, snapshot) {
-        // ---------------------------------------------------------------
-        // Loading
-        // ---------------------------------------------------------------
-
         if (snapshot.connectionState != ConnectionState.done) {
           return const _ImagePlaceholder(
             loading: true,
           );
         }
 
-        // ---------------------------------------------------------------
-        // Error
-        // ---------------------------------------------------------------
-
-        if (snapshot.hasError ||
-            !snapshot.hasData) {
+        if (snapshot.hasError || !snapshot.hasData) {
           return const _ImagePlaceholder(
             loading: false,
           );
         }
 
-        // ---------------------------------------------------------------
-        // Loaded
-        // ---------------------------------------------------------------
+        final imageBytes = snapshot.data!;
 
         return Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               maxWidth: 700,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.all(
-                Radius.circular(10),
-              ),
-              child: Image.memory(
-                snapshot.data!,
-                fit: BoxFit.contain,
-                gaplessPlayback: true,
+            child: GestureDetector(
+              onTap: () {
+                _showImageFullscreen(imageBytes);
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.memory(
+                  imageBytes,
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                ),
               ),
             ),
           ),
         );
       },
     );
-  }
+  }  
 
   // ===========================================================================
   // EDITOR
@@ -778,55 +865,139 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   }
 
   // ===========================================================================
+  // SHOW IMAGE AS FULLSCREEN
+  // ===========================================================================
+
+  void _showImageFullscreen(Uint8List imageBytes) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: Stack(
+            children: [
+              // Image
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.memory(
+                    imageBytes,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+
+              // Close button
+              Positioned(
+                top: 16,
+                right: 16,
+                child: SafeArea(
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      tooltip: 'Close',
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }  
+
+  // ===========================================================================
   // BUILD
   // ===========================================================================
 
+  void _undo() {
+    if (!_isEditing || _isSaving) {
+      return;
+    }
+
+    _quillController.undo();
+  }
+
+  void _redo() {
+    if (!_isEditing || _isSaving) {
+      return;
+    }
+
+    _quillController.redo();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 8,
+    return PopScope(
+      canPop: !_hasUnsavedChanges(),
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
 
-        title: TextField(
-          controller: _titleController,
-          readOnly: !_isEditing,
-          textInputAction: TextInputAction.done,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-          decoration: const InputDecoration(
-            hintText: 'Untitled',
-            border: InputBorder.none,
-          ),
-        ),
+        final shouldLeave = await _confirmLeave();
 
-        actions: [
-          if (_isSaving)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                ),
-              ),
-            )
-          else
-            IconButton(
-              tooltip: _isEditing ? 'Save' : 'Edit',
-              icon: Icon(
-                _isEditing
-                    ? Icons.check
-                    : Icons.edit_outlined,
-              ),
-              onPressed: _isEditing
-                  ? _saveNote
-                  : _enterEditMode,
+        if (shouldLeave && mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          titleSpacing: 8,
+
+          title: TextField(
+            controller: _titleController,
+            readOnly: !_isEditing,
+            textInputAction: TextInputAction.done,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
             ),
+            decoration: const InputDecoration(
+              hintText: 'Untitled',
+              border: InputBorder.none,
+            ),
+          ),
 
-          // AppBar menu is now ONLY for things such as attachments.
+          actions: [
+            if (_isSaving)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                ),
+              )
+            else
+              IconButton(
+                tooltip: _isEditing ? 'Save' : 'Edit',
+                icon: Icon(
+                  _isEditing
+                      ? Icons.check
+                      : Icons.edit_outlined,
+                ),
+                onPressed: _isEditing
+                    ? _saveNote
+                    : _enterEditMode,
+              ),
+
+            // AppBar menu is now ONLY for things such as attachments.
           PopupMenuButton<String>(
             tooltip: 'More',
             enabled: !_isSaving,
@@ -834,6 +1005,14 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
               switch (value) {
                 case 'image':
                   _insertImage();
+                  break;
+
+                case 'undo':
+                  _undo();
+                  break;
+
+                case 'redo':
+                  _redo();
                   break;
               }
             },
@@ -848,6 +1027,33 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                         Icons.image_outlined,
                       ),
                       title: Text('Insert image'),
+                    ),
+                  ),
+
+                if (_isEditing)
+                  const PopupMenuDivider(),
+
+                if (_isEditing)
+                  const PopupMenuItem(
+                    value: 'undo',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        Icons.undo,
+                      ),
+                      title: Text('Undo'),
+                    ),
+                  ),
+
+                if (_isEditing)
+                  const PopupMenuItem(
+                    value: 'redo',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        Icons.redo,
+                      ),
+                      title: Text('Redo'),
                     ),
                   ),
 
@@ -867,33 +1073,33 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                   ),
               ];
             },
-          ),
-        ],
-      ),
+          ),        ],
+        ),
 
-      body: SafeArea(
-        child: _isEditing
-            ? _buildEditor()
-            : _buildPreview(),
-      ),
+        body: SafeArea(
+          child: _isEditing
+              ? _buildEditor()
+              : _buildPreview(),
+        ),
 
-      // ------------------------------------------------------------
-      // Floating formatting button
-      // ------------------------------------------------------------
-      floatingActionButton: _isEditing
-          ? FloatingActionButton(
-              heroTag: 'formattingButton',
-              tooltip: 'Formatting',
-              onPressed: _showToolsMenu,
-              child: const Icon(
-                Icons.text_format,
-              ),
-            )
-          : null,
+        // ------------------------------------------------------------
+        // Floating formatting button
+        // ------------------------------------------------------------
+        floatingActionButton: _isEditing
+            ? FloatingActionButton(
+                heroTag: 'formattingButton',
+                tooltip: 'Formatting',
+                onPressed: _showToolsMenu,
+                child: const Icon(
+                  Icons.text_format,
+                ),
+              )
+            : null,
 
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.endFloat,
-    );  
+        floatingActionButtonLocation:
+            FloatingActionButtonLocation.endFloat,
+      )
+    );
   }
 
   // ===========================================================================
