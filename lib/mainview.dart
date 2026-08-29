@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lexikon/pages/mainmenu.dart';
+import 'package:lexikon/pages/settings.dart';
 
 class MainView extends StatefulWidget {
   const new({super.key});
@@ -10,13 +12,33 @@ class MainView extends StatefulWidget {
 class _MainViewState extends State<MainView> {
   // Pages index
   int selectedIndex = 0;
-  List<String> pages = ["MainMenu()", "Settings"];
+
+  final List<Widget> _pages = [
+    MainMenu(),
+    Settings(),
+  ];
+
+  final List<String> _title = [
+    "Main Menu",
+    "Settings",
+  ];
+  
+  void changePage(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Lexikon")),
-      body: Center(child: Text("It works!")),
+      appBar: AppBar(
+        title: Text(_title[selectedIndex]),
+        centerTitle: true,
+      ),
+
+      body: _pages[selectedIndex],
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         items: [
@@ -30,7 +52,7 @@ class _MainViewState extends State<MainView> {
             label: "Settings",
           ),
         ],
-        onTap: (index) => setState(() => selectedIndex = index),
+        onTap: changePage,
       ),
     );
   }
