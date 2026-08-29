@@ -15,7 +15,7 @@ class _MainViewState extends State<MainView> {
 
   final List<Widget> _pages = [
     MainMenu(),
-    Settings(),
+    SettingsPage(),
   ];
 
   final List<String> _title = [
