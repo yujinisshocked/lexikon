@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/mainview.dart';
 
 void main() async {
@@ -14,14 +15,14 @@ void main() async {
   await Hive.openBox('LEXIKON_SHOPPING');
   await Hive.openBox('LEXIKON_BUDGET');
   await Hive.openBox('LEXIKON_FINANCIAL');
-  runApp(const Lexikon());
+  runApp(const ProviderScope(child: Lexikon()));
 }
 
-class Lexikon extends StatelessWidget {
+class Lexikon extends ConsumerWidget {
   const Lexikon({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const MainView(),
