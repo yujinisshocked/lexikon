@@ -10,15 +10,14 @@ class Note {
   @HiveField(1)
   final String title;
 
-  /// Serialized Flutter Quill document.
+  /// Quill Delta JSON.
   ///
-  /// The entire note body is stored here, including:
-  /// - text
-  /// - formatting
-  /// - headings
-  /// - lists
-  /// - code blocks
-  /// - embedded images
+  /// Example:
+  /// [
+  ///   {"insert":"Hello world\n"},
+  ///   {"insert":{"attachment":"abc123"}},
+  ///   {"insert":"More text\n"}
+  /// ]
   @HiveField(2)
   final String document;
 
@@ -28,11 +27,18 @@ class Note {
   @HiveField(4)
   final DateTime updatedAt;
 
+  /// Attachment ID -> Base64 image data.
+  ///
+  /// The Quill document only contains the attachment ID.
+  @HiveField(5)
+  final Map<String, String> attachments;
+
   Note({
     required this.id,
     required this.title,
     required this.document,
     required this.createdAt,
     required this.updatedAt,
+    this.attachments = const {},
   });
 }

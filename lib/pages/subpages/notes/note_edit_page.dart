@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
@@ -9,6 +11,14 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:lexikon/utils/controllers/note_controller.dart';
 import 'package:lexikon/utils/models/note.dart';
+
+/// Decode Base64 outside the UI isolate.
+///
+/// This prevents large images from blocking the editor while they are
+/// being decoded.
+Uint8List _decodeBase64(String base64Data) {
+  return Uint8List.fromList(base64Decode(base64Data));
+}
 
 class NoteEditPage extends ConsumerStatefulWidget {
   const NoteEditPage({super.key});
@@ -25,26 +35,48 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   String? _noteId;
 
-  bool _isEditing = false;
   bool _initialized = false;
+  bool _isEditing = false;
   bool _isSaving = false;
+
+  DateTime? _createdAt;
+
+  /// Attachment ID -> Base64.
+  ///
+  /// This is the temporary working attachment store.
+  final Map<String, String> _attachments = {};
+
+  /// Attachment ID -> decoded image Future.
+  ///
+  /// Once an image starts decoding, we keep the Future here.
+  /// Rebuilding the editor therefore does NOT restart decoding.
+  final Map<String, Future<Uint8List>> _decodedImages = {};
 
   @override
   void initState() {
     super.initState();
 
     _titleController = TextEditingController();
+
     _editorFocusNode = FocusNode();
+
     _editorScrollController = ScrollController();
 
     _quillController = QuillController.basic();
   }
 
+  // ===========================================================================
+  // INITIALIZATION
+  // ===========================================================================
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (_initialized) return;
+    if (_initialized) {
+      return;
+    }
+
     _initialized = true;
 
     final argument = ModalRoute.of(context)?.settings.arguments;
@@ -53,7 +85,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
       _noteId = argument;
       _loadNote(argument);
     } else {
-      // New notes immediately open in editing mode.
+      // New note.
       _isEditing = true;
     }
   }
@@ -70,68 +102,43 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
       return;
     }
 
+    _titleController.text = note.title;
+    _createdAt = note.createdAt;
+
+    _attachments
+      ..clear()
+      ..addAll(note.attachments);
+
     try {
       final decoded = jsonDecode(note.document);
 
-      final document = Document.fromJson(
-        List<Map<String, dynamic>>.from(
-          decoded.map(
-            (item) => Map<String, dynamic>.from(item),
-          ),
+      final json = List<Map<String, dynamic>>.from(
+        (decoded as List).map(
+          (item) => Map<String, dynamic>.from(item as Map),
         ),
       );
 
-      _quillController.document = document;
-    } catch (error) {
-      // If the document is invalid, start with an empty document rather
-      // than crashing the entire page.
+      _quillController.document = Document.fromJson(json);
+    } catch (_) {
+      // Gracefully recover from invalid/old document data.
       _quillController.document = Document();
     }
-
-    _titleController.text = note.title;
 
     // Existing notes open in preview mode.
     _isEditing = false;
   }
 
   // ===========================================================================
-  // IMAGE INSERTION
+  // ATTACHMENTS
   // ===========================================================================
 
   Future<void> _insertImage() async {
-    if (!_isEditing) {
+    if (!_isEditing || _isSaving) {
       return;
     }
 
-    final source = await showDialog<ImageSource>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Insert image'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Gallery'),
-                onTap: () {
-                  Navigator.pop(context, ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined),
-                title: const Text('Camera'),
-                onTap: () {
-                  Navigator.pop(context, ImageSource.camera);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    final source = await _showImageSourceDialog();
 
-    // User dismissed the dialog.
     if (source == null) {
       return;
     }
@@ -153,10 +160,65 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
       return;
     }
 
-    final base64Image = base64Encode(bytes);
+    final attachmentId =
+        '${DateTime.now().microsecondsSinceEpoch}_${_attachments.length}';
 
-    final imageUrl = 'data:image/jpeg;base64,$base64Image';
+    final base64Data = base64Encode(bytes);
 
+    // Store the persistent representation.
+    _attachments[attachmentId] = base64Data;
+
+    // Do NOT decode it again.
+    //
+    // We already have the bytes from image_picker, so cache them directly.
+    _decodedImages[attachmentId] = Future.value(bytes);
+
+    _insertAttachmentIntoDocument(attachmentId);
+
+    setState(() {});
+  }
+
+  Future<ImageSource?> _showImageSourceDialog() {
+    return showDialog<ImageSource>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Insert image'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library_outlined,
+                ),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(
+                    context,
+                    ImageSource.gallery,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt_outlined,
+                ),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(
+                    context,
+                    ImageSource.camera,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _insertAttachmentIntoDocument(String attachmentId) {
     final selection = _quillController.selection;
 
     int index = selection.baseOffset;
@@ -165,12 +227,21 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
       index = _quillController.document.length - 1;
     }
 
-    _quillController.document.insert(
-      index,
-      BlockEmbed.image(imageUrl),
+    if (index < 0) {
+      index = 0;
+    }
+
+    final embed = CustomBlockEmbed(
+      'attachment',
+      attachmentId,
     );
 
-    // Add a new line after the image so the user can continue typing.
+    _quillController.document.insert(
+      index,
+      embed,
+    );
+
+    // New paragraph after the image.
     _quillController.document.insert(
       index + 1,
       '\n',
@@ -187,160 +258,66 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   }
 
   // ===========================================================================
-  // SAVE
+  // IMAGE CACHE
   // ===========================================================================
 
-  Future<void> _saveNote() async {
-    if (_isSaving) {
-      return;
+  Future<Uint8List> _getDecodedImage(
+    String attachmentId,
+  ) {
+    final existing = _decodedImages[attachmentId];
+
+    if (existing != null) {
+      return existing;
     }
 
-    final title = _titleController.text.trim();
+    final base64Data = _attachments[attachmentId];
 
-    if (title.isEmpty) {
-      _showMessage('Please enter a title.');
-      return;
-    }
-
-    final plainText = _quillController.document.toPlainText().trim();
-
-    // An image-only note is still a valid note.
-    final hasContent = plainText.isNotEmpty ||
-        _quillController.document
-            .toDelta()
-            .toList()
-            .any((operation) => operation.data is Map);
-
-    if (!hasContent) {
-      _showMessage('Note cannot be empty.');
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      final controller = ref.read(noteControllerProvider.notifier);
-
-      final now = DateTime.now();
-
-      DateTime createdAt = now;
-
-      if (_noteId != null) {
-        final oldNote = controller.getNoteById(_noteId!);
-
-        if (oldNote != null) {
-          createdAt = oldNote.createdAt;
-        }
-      }
-
-      final documentJson = jsonEncode(
-        _quillController.document.toDelta().toJson(),
+    if (base64Data == null) {
+      return Future.error(
+        Exception('Attachment not found'),
       );
-
-      final note = Note(
-        id: _noteId ?? now.millisecondsSinceEpoch.toString(),
-        title: title,
-        document: documentJson,
-        createdAt: createdAt,
-        updatedAt: now,
-      );
-
-      if (_noteId == null) {
-        _noteId = note.id;
-        await controller.addNote(note);
-      } else {
-        await controller.updateNote(note);
-      }
-
-      if (!mounted) {
-        return;
-      }
-
-      // Saving does NOT leave the page.
-      // Instead, switch back to preview mode.
-      setState(() {
-        _isEditing = false;
-        _isSaving = false;
-      });
-
-      FocusScope.of(context).unfocus();
-
-      _showMessage('Note saved.');
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isSaving = false;
-      });
-
-      _showMessage('Failed to save note.');
     }
+
+    final future = compute(
+      _decodeBase64,
+      base64Data,
+    );
+
+    _decodedImages[attachmentId] = future;
+
+    return future;
   }
 
   // ===========================================================================
-  // EDIT MODE
-  // ===========================================================================
-
-  void _enterEditMode() {
-    setState(() {
-      _isEditing = true;
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _editorFocusNode.requestFocus();
-      }
-    });
-  }
-
-  // ===========================================================================
-  // TOOLS
+  // FORMATTING
   // ===========================================================================
 
   void _toggleBold() {
-    _quillController.formatSelection(
-      Attribute.bold,
-    );
+    _quillController.formatSelection(Attribute.bold);
   }
 
   void _toggleItalic() {
-    _quillController.formatSelection(
-      Attribute.italic,
-    );
+    _quillController.formatSelection(Attribute.italic);
   }
 
   void _toggleUnderline() {
-    _quillController.formatSelection(
-      Attribute.underline,
-    );
+    _quillController.formatSelection(Attribute.underline);
   }
 
   void _toggleBulletList() {
-    _quillController.formatSelection(
-      Attribute.ul,
-    );
+    _quillController.formatSelection(Attribute.ul);
   }
 
   void _toggleNumberedList() {
-    _quillController.formatSelection(
-      Attribute.ol,
-    );
-  }
-
-  void _toggleCodeBlock() {
-    _quillController.formatSelection(
-      Attribute.codeBlock,
-    );
+    _quillController.formatSelection(Attribute.ol);
   }
 
   void _toggleQuote() {
-    _quillController.formatSelection(
-      Attribute.blockQuote,
-    );
+    _quillController.formatSelection(Attribute.blockQuote);
+  }
+
+  void _toggleCodeBlock() {
+    _quillController.formatSelection(Attribute.codeBlock);
   }
 
   void _setHeading(int level) {
@@ -348,14 +325,14 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
       1 => Attribute.h1,
       2 => Attribute.h2,
       3 => Attribute.h3,
-      _ => Attribute.header,
+      _ => Attribute.h1,
     };
 
     _quillController.formatSelection(attribute);
   }
 
   // ===========================================================================
-  // MENU
+  // TOOLS MENU
   // ===========================================================================
 
   Future<void> _showToolsMenu() async {
@@ -380,10 +357,6 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                     ),
                   ),
                 ),
-
-                // ----------------------------------------------------------------
-                // Text formatting
-                // ----------------------------------------------------------------
 
                 ListTile(
                   leading: const Icon(Icons.format_bold),
@@ -413,10 +386,6 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                 ),
 
                 const Divider(),
-
-                // ----------------------------------------------------------------
-                // Headings
-                // ----------------------------------------------------------------
 
                 const ListTile(
                   title: Text(
@@ -456,12 +425,10 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
                 const Divider(),
 
-                // ----------------------------------------------------------------
-                // Lists / blocks
-                // ----------------------------------------------------------------
-
                 ListTile(
-                  leading: const Icon(Icons.format_list_bulleted),
+                  leading: const Icon(
+                    Icons.format_list_bulleted,
+                  ),
                   title: const Text('Bullet list'),
                   onTap: () {
                     Navigator.pop(context);
@@ -470,7 +437,9 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                 ),
 
                 ListTile(
-                  leading: const Icon(Icons.format_list_numbered),
+                  leading: const Icon(
+                    Icons.format_list_numbered,
+                  ),
                   title: const Text('Numbered list'),
                   onTap: () {
                     Navigator.pop(context);
@@ -498,12 +467,10 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
                 const Divider(),
 
-                // ----------------------------------------------------------------
-                // Attachments
-                // ----------------------------------------------------------------
-
                 ListTile(
-                  leading: const Icon(Icons.image_outlined),
+                  leading: const Icon(
+                    Icons.image_outlined,
+                  ),
                   title: const Text('Insert image'),
                   onTap: () {
                     Navigator.pop(context);
@@ -519,22 +486,218 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
   }
 
   // ===========================================================================
-  // MESSAGE
+  // SAVE
   // ===========================================================================
 
-  void _showMessage(String message) {
-    if (!mounted) {
+  Future<void> _saveNote() async {
+    if (_isSaving) {
       return;
     }
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 2),
-        ),
+    final title = _titleController.text.trim();
+
+    if (title.isEmpty) {
+      _showMessage('Please enter a title.');
+      return;
+    }
+
+    final document = _quillController.document;
+
+    final plainText = document.toPlainText().trim();
+
+    final hasAttachments = document.toDelta().toList().any(
+          (operation) {
+            final data = operation.data;
+
+            return data is Map &&
+                data.containsKey('attachment');
+          },
+        );
+
+    if (plainText.isEmpty && !hasAttachments) {
+      _showMessage('Note cannot be empty.');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final controller =
+          ref.read(noteControllerProvider.notifier);
+
+      final now = DateTime.now();
+
+      final createdAt = _createdAt ?? now;
+
+      // -----------------------------------------------------------------------
+      // Remove attachments that are no longer referenced by the document.
+      //
+      // This is intentionally done ONLY during saving.
+      // -----------------------------------------------------------------------
+
+      final usedAttachmentIds = <String>{};
+
+      for (final operation in document.toDelta().toList()) {
+        final data = operation.data;
+
+        if (data is Map &&
+            data.containsKey('attachment')) {
+          final id = data['attachment'];
+
+          if (id is String) {
+            usedAttachmentIds.add(id);
+          }
+        }
+      }
+
+      _attachments.removeWhere(
+        (id, _) => !usedAttachmentIds.contains(id),
       );
+
+      _decodedImages.removeWhere(
+        (id, _) => !usedAttachmentIds.contains(id),
+      );
+
+      // -----------------------------------------------------------------------
+      // Serialize Quill document.
+      // -----------------------------------------------------------------------
+
+      final documentJson = jsonEncode(
+        document.toDelta().toJson(),
+      );
+
+      final note = Note(
+        id: _noteId ??
+            now.millisecondsSinceEpoch.toString(),
+        title: title,
+        document: documentJson,
+        attachments: Map<String, String>.from(
+          _attachments,
+        ),
+        createdAt: createdAt,
+        updatedAt: now,
+      );
+
+      if (_noteId == null) {
+        _noteId = note.id;
+
+        await controller.addNote(note);
+      } else {
+        await controller.updateNote(note);
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      // IMPORTANT:
+      //
+      // We do NOT leave the page.
+      //
+      // We keep the decoded image cache alive so the preview can immediately
+      // display images without decoding them again.
+      setState(() {
+        _isEditing = false;
+        _isSaving = false;
+      });
+
+      FocusScope.of(context).unfocus();
+
+      _showMessage('Note saved.');
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      _showMessage('Failed to save note.');
+    }
+  }
+
+  // ===========================================================================
+  // ENTER EDIT MODE
+  // ===========================================================================
+
+  void _enterEditMode() {
+    if (_isSaving) {
+      return;
+    }
+
+    setState(() {
+      _isEditing = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      _editorFocusNode.requestFocus();
+    });
+  }
+
+  // ===========================================================================
+  // IMAGE EMBED BUILDER
+  // ===========================================================================
+
+  Widget _buildAttachment(
+    BuildContext context,
+    String attachmentId,
+  ) {
+    final future = _getDecodedImage(attachmentId);
+
+    return FutureBuilder<Uint8List>(
+      future: future,
+      builder: (context, snapshot) {
+        // ---------------------------------------------------------------
+        // Loading
+        // ---------------------------------------------------------------
+
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _ImagePlaceholder(
+            loading: true,
+          );
+        }
+
+        // ---------------------------------------------------------------
+        // Error
+        // ---------------------------------------------------------------
+
+        if (snapshot.hasError ||
+            !snapshot.hasData) {
+          return const _ImagePlaceholder(
+            loading: false,
+          );
+        }
+
+        // ---------------------------------------------------------------
+        // Loaded
+        // ---------------------------------------------------------------
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 700,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.all(
+                Radius.circular(10),
+              ),
+              child: Image.memory(
+                snapshot.data!,
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // ===========================================================================
@@ -555,35 +718,11 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
           32,
         ),
         embedBuilders: [
-          ...FlutterQuillEmbeds.editorBuilders(
-            imageEmbedConfig: QuillEditorImageEmbedConfig(
-              imageProviderBuilder: (context, imageUrl) {
-                if (imageUrl.startsWith('data:image')) {
-                  try {
-                    final commaIndex = imageUrl.indexOf(',');
-
-                    if (commaIndex == -1) {
-                      return null;
-                    }
-
-                    final encoded = imageUrl.substring(
-                      commaIndex + 1,
-                    );
-
-                    final bytes = base64Decode(encoded);
-
-                    return MemoryImage(
-                      Uint8List.fromList(bytes),
-                    );
-                  } catch (_) {
-                    return null;
-                  }
-                }
-
-                return null;
-              },
-            ),
+          _AttachmentEmbedBuilder(
+            buildAttachment: _buildAttachment,
           ),
+
+          ...FlutterQuillEmbeds.editorBuilders(),
         ],
       ),
     );
@@ -609,38 +748,33 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
         enableInteractiveSelection: true,
         scrollable: true,
         embedBuilders: [
-          ...FlutterQuillEmbeds.editorBuilders(
-            imageEmbedConfig: QuillEditorImageEmbedConfig(
-              imageProviderBuilder: (context, imageUrl) {
-                if (imageUrl.startsWith('data:image')) {
-                  try {
-                    final commaIndex = imageUrl.indexOf(',');
-
-                    if (commaIndex == -1) {
-                      return null;
-                    }
-
-                    final encoded = imageUrl.substring(
-                      commaIndex + 1,
-                    );
-
-                    final bytes = base64Decode(encoded);
-
-                    return MemoryImage(
-                      Uint8List.fromList(bytes),
-                    );
-                  } catch (_) {
-                    return null;
-                  }
-                }
-
-                return null;
-              },
-            ),
+          _AttachmentEmbedBuilder(
+            buildAttachment: _buildAttachment,
           ),
+
+          ...FlutterQuillEmbeds.editorBuilders(),
         ],
       ),
     );
+  }
+
+  // ===========================================================================
+  // MESSAGE
+  // ===========================================================================
+
+  void _showMessage(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 
   // ===========================================================================
@@ -662,10 +796,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
             fontWeight: FontWeight.w600,
           ),
           decoration: const InputDecoration(
-            hintText: 'Click here to add title...',
-            hintStyle: TextStyle(
-              color: Color(0xFFC2C2C2),
-            ),
+            hintText: 'Untitled',
             border: InputBorder.none,
           ),
         ),
@@ -695,15 +826,12 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                   : _enterEditMode,
             ),
 
+          // AppBar menu is now ONLY for things such as attachments.
           PopupMenuButton<String>(
             tooltip: 'More',
             enabled: !_isSaving,
             onSelected: (value) {
               switch (value) {
-                case 'tools':
-                  _showToolsMenu();
-                  break;
-
                 case 'image':
                   _insertImage();
                   break;
@@ -723,28 +851,18 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
                     ),
                   ),
 
-                if (_isEditing)
-                  const PopupMenuItem(
-                    value: 'tools',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        Icons.text_format,
-                      ),
-                      title: Text('Formatting'),
-                    ),
-                  ),
-
                 if (!_isEditing)
                   const PopupMenuItem(
-                    value: 'tools',
                     enabled: false,
+                    value: 'info',
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(
                         Icons.info_outline,
                       ),
-                      title: Text('Tap Edit to modify'),
+                      title: Text(
+                        'Tap Edit to modify',
+                      ),
                     ),
                   ),
               ];
@@ -758,7 +876,24 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
             ? _buildEditor()
             : _buildPreview(),
       ),
-    );
+
+      // ------------------------------------------------------------
+      // Floating formatting button
+      // ------------------------------------------------------------
+      floatingActionButton: _isEditing
+          ? FloatingActionButton(
+              heroTag: 'formattingButton',
+              tooltip: 'Formatting',
+              onPressed: _showToolsMenu,
+              child: const Icon(
+                Icons.text_format,
+              ),
+            )
+          : null,
+
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.endFloat,
+    );  
   }
 
   // ===========================================================================
@@ -767,11 +902,121 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   @override
   void dispose() {
+    // This is where the temporary decoded image cache dies.
+    //
+    // The Base64 data remains safely stored in Hive through Note.
+    _decodedImages.clear();
+
+    _attachments.clear();
+
     _quillController.dispose();
     _titleController.dispose();
     _editorFocusNode.dispose();
     _editorScrollController.dispose();
 
     super.dispose();
+  }
+}
+
+// =============================================================================
+// CUSTOM ATTACHMENT EMBED BUILDER
+// =============================================================================
+
+class _AttachmentEmbedBuilder extends EmbedBuilder {
+  final Widget Function(
+    BuildContext context,
+    String attachmentId,
+  ) buildAttachment;
+
+  _AttachmentEmbedBuilder({
+    required this.buildAttachment,
+  });
+
+  @override
+  String get key => 'attachment';
+
+  @override
+  Widget build(
+    BuildContext context,
+    EmbedContext embedContext,
+  ) {
+    final node = embedContext.node;
+
+    final data = node.value.data;
+
+    if (data is! String) {
+      return const _ImagePlaceholder(
+        loading: false,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 8,
+      ),
+      child: buildAttachment(
+        context,
+        data,
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// IMAGE PLACEHOLDER
+// =============================================================================
+
+class _ImagePlaceholder extends StatelessWidget {
+  final bool loading;
+
+  const _ImagePlaceholder({
+    required this.loading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 280,
+        height: 190,
+        margin: const EdgeInsets.symmetric(
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context)
+              .colorScheme
+              .surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: loading
+              ? const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Text('Decoding image...'),
+                  ],
+                )
+              : const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.broken_image_outlined,
+                      size: 42,
+                    ),
+                    SizedBox(height: 8),
+                    Text('Unable to load image'),
+                  ],
+                ),
+        ),
+      ),
+    );
   }
 }
