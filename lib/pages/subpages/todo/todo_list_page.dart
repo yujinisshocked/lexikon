@@ -22,8 +22,6 @@ class _TodoPageState extends ConsumerState<TodoPage> {
         a.day == b.day;
   }
 
-  DateTime _selectedDate = DateTime.now();
-
   bool _isSearching = false;
   final TextEditingController _searchController =
       TextEditingController();

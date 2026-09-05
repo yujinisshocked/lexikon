@@ -144,9 +144,6 @@ class _NoteListPageState extends ConsumerState<NoteListPage> {
     final pinnedNotes =
         notes.where((note) => note.isPinned).toList();
 
-    final normalNotes =
-        notes.where((note) => !note.isPinned).toList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notes'),

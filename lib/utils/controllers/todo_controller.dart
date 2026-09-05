@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lexikon/utils/models/todo.dart';
 import 'package:lexikon/utils/repositories/todo_repository.dart';
-import 'package:lexikon/utils/services/notification_service.dart';
+// import 'package:lexikon/utils/services/notification_service.dart';
 
 final todoRepositoryProvider = Provider<TodoRepository>((ref) {
   return TodoRepository();
@@ -50,9 +50,9 @@ class TodoController extends StateNotifier<List<Todo>> {
   }
 
   Future<void> deleteTodo(Todo todo) async {
-    if (todo.reminderAt != null) {
-      await NotificationService.instance.cancelReminder(todo.id);
-    }
+    // if (todo.reminderAt != null) {
+    //   await NotificationService.instance.cancelReminder(todo.id);
+    // }
 
     await _repository.deleteTodo(todo.id);
 
@@ -95,11 +95,11 @@ class TodoController extends StateNotifier<List<Todo>> {
 
     await updateTodo(updatedTodo);
 
-    await NotificationService.instance.scheduleReminder(
-      id: updatedTodo.id,
-      text: updatedTodo.text,
-      reminderAt: reminderAt,
-    );
+    // await NotificationService.instance.scheduleReminder(
+    //   id: updatedTodo.id,
+    //   text: updatedTodo.text,
+    //   reminderAt: reminderAt,
+    // );
   } 
 
   Future<void> clearReminder(Todo todo) async {
@@ -110,8 +110,8 @@ class TodoController extends StateNotifier<List<Todo>> {
       ),
     );
 
-    await NotificationService.instance.cancelReminder(
-      todo.id,
-    );
+    // await NotificationService.instance.cancelReminder(
+    //   todo.id,
+    // );
   }
 }

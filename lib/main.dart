@@ -13,7 +13,7 @@ import 'package:lexikon/pages/subpages/todo/todo_list_page.dart';
 import 'package:lexikon/pages/subpages/shopping/shopping_list_page.dart';
 import 'package:lexikon/pages/subpages/budget/budget_calculator_page.dart';
 import 'package:lexikon/pages/subpages/financial/financial_tracker_page.dart';
-import 'package:lexikon/utils/services/notification_service.dart';
+// import 'package:lexikon/utils/services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,7 +33,7 @@ Future<void> main() async {
   await Hive.openBox('LEXIKON_BUDGET');
   await Hive.openBox('LEXIKON_FINANCIAL');
 
-  await NotificationService.instance.initialize();
+  // await NotificationService.instance.initialize();
 
   runApp(const ProviderScope(child: Lexikon()));
 }
