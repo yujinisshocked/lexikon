@@ -21,9 +21,9 @@ class TodoBubble extends StatelessWidget {
     final theme = Theme.of(context);
 
     final backgroundColor = switch (todo.status) {
-      TodoStatus.incomplete => theme.colorScheme.primary,
-      TodoStatus.pending => theme.colorScheme.secondary,
-      TodoStatus.completed => theme.colorScheme.surfaceContainerHighest,
+      TodoStatus.incomplete => Colors.blue,
+      TodoStatus.pending => Colors.amber,
+      TodoStatus.completed => Colors.green,
     };
 
     final foregroundColor = switch (todo.status) {

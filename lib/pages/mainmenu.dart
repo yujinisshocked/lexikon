@@ -47,9 +47,9 @@ class _MainMenuState extends State<MainMenu> {
                     style: const TextStyle(fontSize: 14.0),
                   ),
                 ],
-                      ),
-                  ),
-            );
+              ),
+            ),
+          );
         },
       ),
     );
