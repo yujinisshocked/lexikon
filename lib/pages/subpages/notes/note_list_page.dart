@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lexikon/utils/helpers/platform_helpers.dart';
 
 import 'package:lexikon/utils/models/note.dart';
 import 'package:lexikon/utils/controllers/note_controller.dart';
 import 'package:lexikon/pages/subpages/notes/notes_tile_widget.dart';
 
 class NoteListPage extends ConsumerStatefulWidget {
+
   const NoteListPage({super.key});
 
   @override
@@ -13,6 +15,8 @@ class NoteListPage extends ConsumerStatefulWidget {
 }
 
 class _NoteListPageState extends ConsumerState<NoteListPage> {
+  final bool isDesktop = PlatformHelpers().isDesktop();
+
   // ---------------------------------------------------------------------------
   // Delete
   // ---------------------------------------------------------------------------

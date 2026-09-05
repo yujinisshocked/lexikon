@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/mainview.dart';
+import 'package:lexikon/utils/helpers/platform_helpers.dart';
 import 'package:lexikon/utils/models/todo.dart';
 import 'package:lexikon/utils/services/hive_service.dart';
 import 'package:lexikon/utils/models/note.dart';
@@ -43,9 +44,11 @@ class Lexikon extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    bool isDesktop = PlatformHelpers().isDesktop();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const MainView(),
+      home: isDesktop ? const DesktopView() : const MainView(),
       routes: {
         '/note-list': (context) => const NoteListPage(),
         '/note-edit': (context) => const NoteEditPage(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lexikon/utils/helpers/variables_helpers.dart';
 
 class MainMenu extends StatefulWidget {
   const MainMenu({super.key});
@@ -9,15 +10,7 @@ class MainMenu extends StatefulWidget {
 
 class _MainMenuState extends State<MainMenu> {
   // List of features with their respective icons and labels
-  final List<Map<String, dynamic>> features = [
-    {'icon': Icons.note, 'label': 'Note Taking', 'route': '/note-list'},
-    {'icon': Icons.track_changes, 'label': 'Habit Tracking', 'route': '/habit-tracking'},
-    {'icon': Icons.schedule, 'label': 'Scheduling', 'route': '/scheduling'},
-    {'icon': Icons.checklist, 'label': 'To-Do List', 'route': '/todo-list'},
-    {'icon': Icons.shopping_cart, 'label': 'Shopping List', 'route': '/shopping-list'},
-    {'icon': Icons.calculate, 'label': 'Budget Calculator', 'route': '/budget-calculator'},
-    {'icon': Icons.monetization_on, 'label': 'Financial Tracker', 'route': '/financial-tracker'},
-  ];
+  List<dynamic> features = VariablesHelpers().features;
 
   @override
   Widget build(BuildContext context) {
@@ -31,32 +24,60 @@ class _MainMenuState extends State<MainMenu> {
           ),
           itemCount: features.length,
           itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-              // Handle feature navigation
-              final route = features[index]['route'];
-                Navigator.pushNamed(context, route);
-            },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  features[index]['icon'],
-                  size: 40.0,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(height: 8.0),
-                Text(
-                  features[index]['label'],
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14.0),
-                ),
-              ],
-        ),
-    );
+            return Container(
+              padding: EdgeInsets.all(8),
+              child: GestureDetector(
+                onTap: () {
+                // Handle feature navigation
+                final route = features[index]['route'];
+                  Navigator.pushNamed(context, route);
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    features[index]['icon'],
+                    size: 40.0,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(height: 8.0),
+                  Text(
+                    features[index]['label'],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14.0),
+                  ),
+                ],
+                      ),
+                  ),
+            );
         },
       ),
     );
   }
 }
 
+class DesktopMenu extends StatefulWidget {
+  final Widget currDesktop;
+  const new({
+    super.key,
+    required this.currDesktop,
+  });
+
+  @override
+  State<DesktopMenu> createState() => _DesktopMenuState();
+}
+
+class _DesktopMenuState extends State<DesktopMenu> {
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: 60,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+        ),
+        child: widget.currDesktop,
+      ),
+    );
+  }
+}

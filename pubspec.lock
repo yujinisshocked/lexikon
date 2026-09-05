@@ -169,6 +169,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  convert_object:
+    dependency: transitive
+    description:
+      name: convert_object
+      sha256: a35faeb03782a26e23521a73e0d7e71e3dd4294edf9f31f2e62cc5dc28f12d93
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   cross_file:
     dependency: transitive
     description:
@@ -201,6 +209,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.9"
+  dart_helper_utils:
+    dependency: transitive
+    description:
+      name: dart_helper_utils
+      sha256: a4c1e943555f2c187bd99df54e86ba0270f63d0948a0ce83fa39a47378c933a5
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.0"
   dart_quill_delta:
     dependency: transitive
     description:
@@ -233,6 +249,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.1"
+  equatable:
+    dependency: transitive
+    description:
+      name: equatable
+      sha256: "3bce007a596ff8b3119c45d68aaef631272537c03d30e5d4534dd24bf4c5eaa2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   fake_async:
     dependency: transitive
     description:
@@ -318,6 +342,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  flutter_device_type:
+    dependency: "direct main"
+    description:
+      name: flutter_device_type
+      sha256: "8f41f2271733f615957924dd1dcd10ef90848bb86b603ae20578f91591b900f3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0"
+  flutter_helper_utils:
+    dependency: "direct main"
+    description:
+      name: flutter_helper_utils
+      sha256: "07b18101a35d5ac9857f024124c4ccea852d5c09efa95825da75bf89133d36ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.2.1"
   flutter_hooks:
     dependency: transitive
     description:
@@ -1098,6 +1138,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  stringo:
+    dependency: transitive
+    description:
+      name: stringo
+      sha256: c81711b419454f32fe0401ab5fd99d35ae119b4f84a7559641c08bd498eb92d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   term_glyph:
     dependency: transitive
     description:
