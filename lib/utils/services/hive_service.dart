@@ -2,6 +2,9 @@ import 'package:hive/hive.dart';
 import 'package:lexikon/utils/models/note.dart';
 import 'package:lexikon/utils/models/todo.dart';
 
+part 'hive_service_todo.dart';
+part 'hive_service_notes.dart';
+
 class HiveService {
   // Initialize Hive adapters
   static Future<void> initializeAdapters() async {
@@ -60,60 +63,4 @@ class HiveService {
     final box = getBox(boxName);
     return box.values.toList();
   }
-
-  // Add a note to the notes box
-  static Future<void> addNote(Note note) async {
-    final box = getBox<Note>('LEXIKON_NOTES');
-    await box.put(note.id, note);
-  }
-
-  // Get all notes from the notes box
-  static List<Note> getAllNotes() {
-    final box = getBox<Note>('LEXIKON_NOTES');
-    return box.values.toList();
-  }
-
-  // Delete a note from the notes box
-  static Future<void> deleteNote(String noteId) async {
-    final box = getBox<Note>('LEXIKON_NOTES');
-    await box.delete(noteId);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Todo
-  // ---------------------------------------------------------------------------
-
-  static Future<void> addTodo(Todo todo) async {
-    final box = getBox<Todo>('LEXIKON_TODOS');
-    await box.put(todo.id, todo);
-  }
-
-  static List<Todo> getAllTodos() {
-    final box = getBox<Todo>('LEXIKON_TODOS');
-
-    final todos = box.values.toList();
-
-    // Keep the user's manual ordering.
-    todos.sort(
-      (a, b) => a.sortOrder.compareTo(b.sortOrder),
-    );
-
-    return todos;
-  }
-
-  static Todo? getTodoById(String todoId) {
-    final box = getBox<Todo>('LEXIKON_TODOS');
-    return box.get(todoId);
-  }
-
-  static Future<void> updateTodo(Todo todo) async {
-    final box = getBox<Todo>('LEXIKON_TODOS');
-    await box.put(todo.id, todo);
-  }
-
-  static Future<void> deleteTodo(String todoId) async {
-    final box = getBox<Todo>('LEXIKON_TODOS');
-    await box.delete(todoId);
-  }
-
 }

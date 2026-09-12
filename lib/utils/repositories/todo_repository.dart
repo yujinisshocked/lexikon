@@ -3,23 +3,23 @@ import 'package:lexikon/utils/services/hive_service.dart';
 
 class TodoRepository {
   Future<void> addTodo(Todo todo) async {
-    await HiveService.addTodo(todo);
+    await HiveServiceTodo.addTodo(todo);
   }
 
   List<Todo> getAllTodos() {
-    return HiveService.getAllTodos();
+    return HiveServiceTodo.getAllTodos();
   }
 
   Todo? getTodoById(String todoId) {
-    return HiveService.getTodoById(todoId);
+    return HiveServiceTodo.getTodoById(todoId);
   }
 
   Future<void> updateTodo(Todo todo) async {
-    await HiveService.updateTodo(todo);
+    await HiveServiceTodo.updateTodo(todo);
   }
 
   Future<void> deleteTodo(String todoId) async {
-    await HiveService.deleteTodo(todoId);
+    await HiveServiceTodo.deleteTodo(todoId);
   }
 
   int getNextSortOrder() {

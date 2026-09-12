@@ -3,11 +3,11 @@ import 'package:lexikon/utils/services/hive_service.dart';
 
 class NoteRepository {
   Future<void> addNote(Note note) async {
-    await HiveService.addNote(note);
+    await HiveServiceNotes.addNote(note);
   }
 
   List<Note> getAllNotes() {
-    return HiveService.getAllNotes();
+    return HiveServiceNotes.getAllNotes();
   }
 
   Note? getNoteById(String noteId) {
@@ -26,7 +26,7 @@ class NoteRepository {
   }
 
   Future<void> deleteNote(String noteId) async {
-    await HiveService.deleteNote(noteId);
+    await HiveServiceNotes.deleteNote(noteId);
   }
 
   Future<void> clearAllNotes() async {
