@@ -58,7 +58,7 @@ class _MainMenuState extends State<MainMenu> {
 
 class DesktopMenu extends StatefulWidget {
   final Widget currDesktop;
-  const new({
+  const DesktopMenu({
     super.key,
     required this.currDesktop,
   });

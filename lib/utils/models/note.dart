@@ -10,13 +10,6 @@ class Note {
   @HiveField(1)
   final String title;
 
-  /// Quill Delta JSON.
-  ///
-  /// Example:
-  /// [
-  ///   {"insert":"Hello\n"},
-  ///   {"insert":{"attachment":"12345"}}
-  /// ]
   @HiveField(2)
   final String document;
 

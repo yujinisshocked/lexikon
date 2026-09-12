@@ -67,7 +67,7 @@ class _MainViewState extends State<MainView> {
 // ============================================================================
 
 class DesktopView extends StatefulWidget {
-  const new({super.key});
+  const DesktopView({super.key});
 
   @override
   State<DesktopView> createState() => _DesktopViewState();

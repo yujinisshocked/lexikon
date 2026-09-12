@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class SearchBar extends StatefulWidget {
   final TextEditingController searchController;
-  const new({
+  const SearchBar({
     super.key,
     required this.searchController,
   });
@@ -37,7 +37,7 @@ class Features extends StatelessWidget {
   final IconData icon;
   final bool isActive;
   
-  const new({
+  const Features({
     super.key,
     required this.onTap,
     required this.featureName,
