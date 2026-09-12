@@ -74,16 +74,6 @@ class SettingsPage extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        ListTile(
-          leading: const Icon(Icons.notifications),
-          title: const Text('Notifications'),
-          trailing: Switch(
-            value: true, // Replace with actual state
-            onChanged: (value) {
-              // Toggle notifications
-          },
-        ),
-        ),
         const Divider(),
         // Data Management Section
         const Padding(
