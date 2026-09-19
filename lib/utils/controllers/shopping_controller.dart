@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lexikon/utils/models/shopping_list/shopping_item.dart';
 import 'package:lexikon/utils/models/shopping_list/shopping_list.dart';
 import 'package:lexikon/utils/repositories/shopping_repository.dart';
 
@@ -28,14 +29,46 @@ class ShoppingController extends StateNotifier<List<ShoppingList>>{
     );
 
     state = shoppingLists;
+   
   }
 
-  Future<void> _setDefaultList() async {
-    return await _repo.setDefaultList();
+  Future<void> setSelectedList(String id) async {
+    return await _repo.setSelectedList(id);
   }
 
   Future<void> addList(ShoppingList shoppingList) async {
     await _repo.addList(shoppingList);
-    _loadShoppingLists;
+    _loadShoppingLists();
+  }
+
+  Future<void> removeList(String id) async {
+    await _repo.removeList(id);
+    _loadShoppingLists();
+  }
+
+  Future<String> loadSelectedList() async {
+    return await _repo.loadSelectedList();
+  }
+
+  Future<ShoppingList?> getShoppingListDetails(String id) async {
+    return await _repo.getShoppingListById(id);
+  }
+
+  Future<void> updateShoppingList(ShoppingList shoppingList) async {
+    return await _repo.updateShoppingList(shoppingList);
+  }
+
+  // Controllers for ShoppingItem
+
+  Future<void> updateShoppingItem(ShoppingItem shoppingItem) async{
+    return await _repo.updateShoppingItem(shoppingItem);
+  }
+
+  Future<void> addItem(String name) async {
+    return await _repo.addItem(name);
+  }
+
+  Future<void> resetList(String id) async {
+    return await _repo.resetList(id);
   }
 }

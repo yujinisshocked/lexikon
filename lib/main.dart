@@ -13,7 +13,7 @@ import 'package:lexikon/pages/subpages/notes/note_edit_page.dart';
 import 'package:lexikon/pages/subpages/habits/habit_tracking_page.dart';
 import 'package:lexikon/pages/subpages/scheduling/scheduling_page.dart';
 import 'package:lexikon/pages/subpages/todo/todo_list_page.dart';
-import 'package:lexikon/pages/subpages/shopping/shopping_list_page.dart';
+import 'package:lexikon/pages/subpages/shopping/shopping_list_edit_page.dart';
 import 'package:lexikon/pages/subpages/budget/budget_calculator_page.dart';
 import 'package:lexikon/pages/subpages/financial/financial_tracker_page.dart';
 
@@ -56,7 +56,7 @@ class Lexikon extends ConsumerWidget {
         '/habit-tracking': (context) => const HabitTrackingPage(),
         '/scheduling': (context) => const SchedulingPage(),
         '/todo-list': (context) => const TodoPage(),
-        '/shopping-list': (context) => const ShoppingListPage(),
+        '/shopping-list': (context) => const ShoppingListEditPage(),
         '/budget-calculator': (context) => const BudgetCalculatorPage(),
         '/financial-tracker': (context) => const FinancialTrackerPage(),
       },

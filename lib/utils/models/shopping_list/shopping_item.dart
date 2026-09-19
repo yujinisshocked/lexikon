@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'shopping_item.g.dart';
 
-@HiveType(typeId: 3)
+@HiveType(typeId: 4)
 class ShoppingItem extends HiveObject{
   @HiveField(0)
   String name;

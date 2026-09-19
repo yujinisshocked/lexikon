@@ -9,7 +9,6 @@ extension HiveServiceShoppingLists on HiveService {
 
   // 1. Create / Add List
   static Future<void> createShoppingList(ShoppingList shoppingList) async {
-    // Storing by unique 'id' is safer than storing by 'name'
     await _shoppingBox.put(shoppingList.id, shoppingList);
   }
 
@@ -23,36 +22,19 @@ extension HiveServiceShoppingLists on HiveService {
     return _shoppingBox.get(id);
   }
 
-  // 4. Get Currently Active / Selected List
-  static ShoppingList? getSelectedList() {
-    try {
-      return _shoppingBox.values.firstWhere((list) => list.isSelected);
-    } catch (_) {
-      return null; // Return null if no list is currently selected
-    }
-  }
-
-  // 5. Select a List for Checkout (and deselect all others)
-  static Future<void> selectList(String listId) async {
-    for (var list in _shoppingBox.values) {
-      if (list.id == listId) {
-        list.isSelected = true;
-      } else if (list.isSelected) {
-        list.isSelected = false;
-      }
-      await list.save();
-    }
-  }
-
   // 6. Reset Checkout State (Unchecks items & clears selected list)
   static Future<void> resetListSession(String listId) async {
     final list = getShoppingListById(listId);
+
     if (list != null) {
-      for (var item in list.items) {
+      for (final item in list.items) {
         item.isBought = false;
       }
-      list.isSelected = false;
+
+      // list.isSelected = false;
+
       await list.save();
+      debugPrint("Item reset! - List: ${list.name}");
     }
   }
 
@@ -74,4 +56,24 @@ extension HiveServiceShoppingLists on HiveService {
   static Future<void> deleteShoppingList(String id) async {
     await _shoppingBox.delete(id);
   }
+
+  // 10. Set a selected list
+  static Future<void> setSelectedList(String id) async {
+    for (final list in _shoppingBox.values) {
+      final selected = list.id == id;
+
+      if (list.isSelected != selected) {
+        list.isSelected = selected;
+        await list.save();
+      }
+    }
+  }
+
+  static Future<String> loadSelectedList() async {
+    for (final list in _shoppingBox.values) {
+      if (list.isSelected) return list.id;
+    }
+    return '';
+  }
+
 }

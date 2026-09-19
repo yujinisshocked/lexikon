@@ -1,12 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:lexikon/utils/models/note.dart';
 import 'package:lexikon/utils/models/settings.dart';
+import 'package:lexikon/utils/models/shopping_list/shopping_item.dart';
 import 'package:lexikon/utils/models/shopping_list/shopping_list.dart';
 import 'package:lexikon/utils/models/todo.dart';
 
 part 'hive_service_todo.dart';
 part 'hive_service_notes.dart';
 part 'hive_service_shopping_lists.dart';
+part 'hive_service_shopping_items.dart';
 part 'hive_service_settings.dart';
 
 class HiveService {
@@ -15,6 +18,8 @@ class HiveService {
     Hive.registerAdapter(NoteAdapter());
     Hive.registerAdapter(TodoAdapter()); 
     Hive.registerAdapter(TodoStatusAdapter());
+    Hive.registerAdapter(ShoppingListAdapter());
+    Hive.registerAdapter(ShoppingItemAdapter());
   }
 
   // Get a Hive box by name

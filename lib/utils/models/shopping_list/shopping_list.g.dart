@@ -8,7 +8,7 @@ part of 'shopping_list.dart';
 
 class ShoppingListAdapter extends TypeAdapter<ShoppingList> {
   @override
-  final int typeId = 2;
+  final int typeId = 3;
 
   @override
   ShoppingList read(BinaryReader reader) {
@@ -18,9 +18,9 @@ class ShoppingListAdapter extends TypeAdapter<ShoppingList> {
     };
     return ShoppingList(
       id: fields[0] as String,
-      name: fields[1] as String,
-      items: (fields[2] as List).cast<ShoppingItem>(),
-      isSelected: fields[3] as bool,
+      isSelected: fields[1] as bool,
+      name: fields[2] as String,
+      items: (fields[3] as List).cast<ShoppingItem>(),
       sortOrder: fields[4] as int,
     );
   }
@@ -32,11 +32,11 @@ class ShoppingListAdapter extends TypeAdapter<ShoppingList> {
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.name)
-      ..writeByte(2)
-      ..write(obj.items)
-      ..writeByte(3)
       ..write(obj.isSelected)
+      ..writeByte(2)
+      ..write(obj.name)
+      ..writeByte(3)
+      ..write(obj.items)
       ..writeByte(4)
       ..write(obj.sortOrder);
   }
