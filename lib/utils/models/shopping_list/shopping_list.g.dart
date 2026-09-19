@@ -17,22 +17,28 @@ class ShoppingListAdapter extends TypeAdapter<ShoppingList> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ShoppingList(
-      name: fields[0] as String,
-      items: (fields[1] as List).cast<String>(),
-      isSelected: fields[2] as bool,
+      id: fields[0] as String,
+      name: fields[1] as String,
+      items: (fields[2] as List).cast<ShoppingItem>(),
+      isSelected: fields[3] as bool,
+      sortOrder: fields[4] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, ShoppingList obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
-      ..write(obj.name)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.items)
+      ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.isSelected);
+      ..write(obj.items)
+      ..writeByte(3)
+      ..write(obj.isSelected)
+      ..writeByte(4)
+      ..write(obj.sortOrder);
   }
 
   @override

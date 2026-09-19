@@ -163,7 +163,7 @@ class _NoteListPageState extends ConsumerState<NoteListPage> {
 
               itemCount: notes.length,
 
-              onReorder: _reorderNotes,
+              onReorderItem: _reorderNotes,
 
               proxyDecorator: (
                 child,

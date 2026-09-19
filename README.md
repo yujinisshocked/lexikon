@@ -2,6 +2,8 @@
 
 An all-in-one life tracking mobile app with mini functions that makes life easier.
 
+I'm too shy for this project...
+
 ---
 
 ## Description  <!-- What is this project? -->
@@ -41,9 +43,3 @@ An all-in-one life tracking mobile app with mini functions that makes life easie
 ## Platform
 
 Android, iOS compatible. Written in Flutter/Dart.
-
-### **Getting Started**
-
-To get started with the Lexikon app, follow these steps:
-
-1. **Clone the Repository**:

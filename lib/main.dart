@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/mainview.dart';
 import 'package:lexikon/utils/helpers/platform_helpers.dart';
+import 'package:lexikon/utils/models/shopping_list/shopping_item.dart';
+import 'package:lexikon/utils/models/shopping_list/shopping_list.dart';
 import 'package:lexikon/utils/models/todo.dart';
 import 'package:lexikon/utils/services/hive_service.dart';
 import 'package:lexikon/utils/models/note.dart';
@@ -29,7 +31,8 @@ Future<void> main() async {
   await Hive.openBox<Note>('LEXIKON_NOTES');
   await Hive.openBox('LEXIKON_HABITS');
   await Hive.openBox<Todo>('LEXIKON_TODOS');
-  await Hive.openBox('LEXIKON_SHOPPING');
+  await Hive.openBox<ShoppingList>('LEXIKON_SHOPPING');
+  await Hive.openBox<ShoppingItem>('LEXIKON_SHOPPING_ITEM');
   await Hive.openBox('LEXIKON_BUDGET');
   await Hive.openBox('LEXIKON_FINANCIAL');
 

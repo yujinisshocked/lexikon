@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +50,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
   String? _savedTitle;
   String? _savedDocument;
-  Map<String, String> _savedAttachments = {};
+  final Map<String, String> _savedAttachments = {};
 
   /// Attachment ID -> Base64.
   ///
@@ -950,7 +949,7 @@ class _NoteEditPageState extends ConsumerState<NoteEditPage> {
 
         final shouldLeave = await _confirmLeave();
 
-        if (shouldLeave && mounted) {
+        if (shouldLeave && context.mounted) {
           Navigator.of(context).pop();
         }
       },

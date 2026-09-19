@@ -112,7 +112,7 @@ class _DesktopViewState extends State<DesktopView> {
 
 // SideBar
 class SideBar extends StatefulWidget {
-  const new({super.key});
+  const SideBar({super.key});
 
   @override
   State<SideBar> createState() => _SideBarState();
@@ -152,7 +152,7 @@ class FeatureBar extends StatefulWidget {
   final int selectedIndex;
   final String featureName;
 
-  const new({
+  const FeatureBar({
     super.key,
     required this.searchController,
     required this.features,
