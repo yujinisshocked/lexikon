@@ -47,8 +47,8 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> {
       }
     }
 
-    return Dialog(
-      child: shoppingLists.isEmpty ? _EmptyState() : Scaffold(
+    return shoppingLists.isEmpty ? _EmptyState() : Dialog(
+      child: Scaffold(
         floatingActionButton: IconButton(
           onPressed: () {
             showDialog(
@@ -94,25 +94,29 @@ class __EmptyStateState extends ConsumerState<_EmptyState> {
   @override
   Widget build(BuildContext context) {
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        spacing: 14,
-        children: [
-          Text("No lists yet!"),
-          ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context, 
-                builder: (context) {
-                  return _AddList();
-                }
-              );
-            }, 
-            child: Text("Create a new list"),
-          ),
-        ],
-      ),      
+    return AlertDialog(
+      title: Text("No lists yet!"),
+      actions: [
+        TextButton(
+          onPressed: () {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          }, 
+          child: Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            showDialog(
+              context: context, 
+              builder: (BuildContext context) {
+                return _AddList();
+              }
+            );
+          }, 
+          child: Text("Add List"),
+        )
+      ],
     );
   }
 }
@@ -144,7 +148,7 @@ class __AddListState extends ConsumerState<_AddList> {
 
     try {
       await ctrl.addList(shoppingList);
-      if (mounted) Navigator.pop(context);
+        if (mounted) Navigator.pop(context);
       debugPrint("Create List Succeded");
     } catch (e) {
       debugPrint("Create List failed - $e");
@@ -158,27 +162,26 @@ class __AddListState extends ConsumerState<_AddList> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 14,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-              ),
-              controller: _controller,
-              style: TextStyle(),
-            ),
-            ElevatedButton(
-              onPressed: _createList, 
-              child: Text("Submit"),
-            )
-          ],
+    return AlertDialog(
+      title: Text("Create new list"),
+      content: TextField(
+        decoration: InputDecoration(
+          border: OutlineInputBorder(),
+          hint: Text("E.g Groceries")
         ),
+        controller: _controller,
+        style: TextStyle(),
       ),
+
+      actions: [
+        TextButton(
+          onPressed: () {
+            if (mounted) Navigator.pop(context);
+          }, 
+          child: Text("Cancel")
+        ),
+        TextButton(onPressed: _createList, child: Text("Create"))
+      ],
     );
   }
 }

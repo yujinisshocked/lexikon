@@ -200,27 +200,30 @@ class _ShoppingListEditPageState
                   return Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _itemController,
-                          autofocus: true,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: 'Item name',
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            controller: _itemController,
+                            autofocus: true,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Item name',
+                            ),
+                            onSubmitted: (value) async {
+                              final name = value.trim();
+                          
+                              if (name.isEmpty) return;
+                          
+                              await addItem(name);
+                          
+                              if (!mounted) return;
+                          
+                              setState(() {
+                                isAdding = false;
+                                _itemController.clear();
+                              });
+                            },
                           ),
-                          onSubmitted: (value) async {
-                            final name = value.trim();
-
-                            if (name.isEmpty) return;
-
-                            await addItem(name);
-
-                            if (!mounted) return;
-
-                            setState(() {
-                              isAdding = false;
-                              _itemController.clear();
-                            });
-                          },
                         ),
                       ),
 
@@ -387,12 +390,12 @@ class _ShoppingItemWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: widget.onTap,
-      child: Row(
-        children: [
-          // Checkbox
-          Checkbox(
+    return Row(
+      children: [
+        // Checkbox
+        Expanded(
+          flex: 10,
+          child: Checkbox(
             value: widget.item.isBought,
             onChanged: (value) {
               if (value != null) {
@@ -400,35 +403,60 @@ class _ShoppingItemWidgetState
               }
             },
           ),
-
-          // Item name
-          Expanded(
-            flex: 75,
-            child: TextField(
-              controller: _controller,
-              onSubmitted: _updateName,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
+        ),
+    
+        // Item name
+        Expanded(
+          flex: 45,
+          child: TextField(
+            textAlign: TextAlign.center,
+            controller: _controller,
+            onSubmitted: _updateName,
+            decoration: const InputDecoration(
+              border: UnderlineInputBorder(),
             ),
           ),
-
-          // Quantity
-          Expanded(
-            flex: 20,
-            child: quantityCounter(),
-          ),
-
-          // Delete
-          IconButton(
-            onPressed: widget.onDelete,
+        ),
+    
+        // Quantity
+        Expanded(
+          flex: 30,
+          child: quantityCounter(),
+        ),
+    
+        // Delete
+        Expanded(
+          flex: 10,
+          child: IconButton(
+            onPressed: () {
+              showDialog(
+                context: context, 
+                builder: (context) {
+                  return AlertDialog(
+                    title: Text("Are you sure you want to remove ${widget.item.name}?"),
+                    actions: [
+                      IconButton(
+                        onPressed: () {
+                          if (mounted) {
+                            Navigator.pop(context);
+                          }
+                        }, 
+                        icon: Icon(Icons.close)
+                      ),
+                      IconButton(onPressed: widget.onDelete, icon: Icon(Icons.check))
+                    ],
+                  );
+                }
+              );
+            },
             icon: const Icon(Icons.close),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
+  // TODO: Overflow issue
   Widget quantityCounter() {
     return Row(
       children: [

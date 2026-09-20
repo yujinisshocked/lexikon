@@ -15,23 +15,23 @@ class _MainMenuState extends State<MainMenu> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 16.0,
-            mainAxisSpacing: 16.0,
-          ),
-          itemCount: features.length,
-          itemBuilder: (context, index) {
-            return Container(
-              padding: EdgeInsets.all(8),
-              child: GestureDetector(
-                onTap: () {
-                // Handle feature navigation
-                final route = features[index]['route'];
-                  Navigator.pushNamed(context, route);
-              },
+      padding: const EdgeInsets.all(16.0),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 16.0,
+          mainAxisSpacing: 16.0,
+        ),
+        itemCount: features.length,
+        itemBuilder: (context, index) {
+          return InkWell(
+            onTap: () {
+              // Handle feature navigation
+              final route = features[index]['route'];
+              Navigator.pushNamed(context, route);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

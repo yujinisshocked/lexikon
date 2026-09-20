@@ -65,38 +65,29 @@ class TodoBubble extends StatelessWidget {
                   ),
                 ),
 
-                if (todo.reminderAt != null) ...[
-                  const SizedBox(height: 6),
-
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.alarm_outlined,
-                        size: 14,
-                        color: foregroundColor.withValues(alpha: 0.75),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        _formatReminder(todo.reminderAt!),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: foregroundColor.withValues(alpha: 0.75),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-
                 const SizedBox(height: 4),
 
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    _formatTime(todo.createdAt),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: foregroundColor.withValues(alpha: 0.65),
+                Row(
+                  spacing: 4,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        _formatTime(todo.createdAt),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: foregroundColor.withValues(alpha: 0.65),
+                        ),
+                      ),
                     ),
-                  ),
+                    // if (todo.status == TodoStatus.completed)
+                    Icon(
+                      todo.status == TodoStatus.completed ? 
+                        Icons.check : todo.status == TodoStatus.pending ?
+                        Icons.pause_sharp : null,
+                      size: 14,
+                      color: todo.status == TodoStatus.pending ? Colors.white : Colors.black,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -117,31 +108,5 @@ class TodoBubble extends StatelessWidget {
     final period = time.hour >= 12 ? 'PM' : 'AM';
 
     return '$hour:$minute $period';
-  }
-
-  String _formatReminder(DateTime reminder) {
-    final now = DateTime.now();
-
-    final isToday = reminder.year == now.year &&
-        reminder.month == now.month &&
-        reminder.day == now.day;
-
-    final tomorrow = now.add(const Duration(days: 1));
-
-    final isTomorrow = reminder.year == tomorrow.year &&
-        reminder.month == tomorrow.month &&
-        reminder.day == tomorrow.day;
-
-    final time = _formatTime(reminder);
-
-    if (isToday) {
-      return 'Today, $time';
-    }
-
-    if (isTomorrow) {
-      return 'Tomorrow, $time';
-    }
-
-    return '${reminder.day}/${reminder.month}, $time';
   }
 }
