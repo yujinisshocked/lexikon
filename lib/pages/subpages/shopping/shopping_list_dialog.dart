@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/pages/subpages/shopping/shopping_list_tile_widget.dart';
@@ -85,7 +83,6 @@ class _ShoppingListDialogState extends ConsumerState<ShoppingListDialog> {
 }
 
 class _EmptyState extends ConsumerStatefulWidget {
-  const _EmptyState({super.key});
 
   @override
   ConsumerState<_EmptyState> createState() => __EmptyStateState();
@@ -121,7 +118,6 @@ class __EmptyStateState extends ConsumerState<_EmptyState> {
 }
 
 class _AddList extends ConsumerStatefulWidget {
-  const _AddList({super.key});
 
   @override
   ConsumerState<_AddList> createState() => __AddListState();
@@ -148,7 +144,7 @@ class __AddListState extends ConsumerState<_AddList> {
 
     try {
       await ctrl.addList(shoppingList);
-      if (context.mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
       debugPrint("Create List Succeded");
     } catch (e) {
       debugPrint("Create List failed - $e");

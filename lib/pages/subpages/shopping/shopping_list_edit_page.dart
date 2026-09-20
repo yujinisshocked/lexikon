@@ -280,7 +280,6 @@ class _ShoppingItemWidget extends StatefulWidget {
   final Future<void> Function() onChanged;
 
   const _ShoppingItemWidget({
-    super.key,
     required this.item,
     required this.onTap,
     required this.onDelete,
@@ -466,7 +465,7 @@ class _ShoppingItemWidgetState
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({super.key});
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
