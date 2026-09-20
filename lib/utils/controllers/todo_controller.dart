@@ -78,25 +78,4 @@ class TodoController extends StateNotifier<List<Todo>> {
     );
   }
 
-  Future<void> setReminder(
-    Todo todo,
-    DateTime reminderAt,
-  ) async {
-    final updatedTodo = todo.copyWith(
-      reminderAt: reminderAt,
-      status: TodoStatus.pending,
-      updatedAt: DateTime.now(),
-    );
-
-    await updateTodo(updatedTodo);
-  } 
-
-  Future<void> clearReminder(Todo todo) async {
-    await updateTodo(
-      todo.copyWith(
-        reminderAt: null,
-        updatedAt: DateTime.now(),
-      ),
-    );
-  }
 }

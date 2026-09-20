@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 
-class FinancialTrackerPage extends StatelessWidget {
+class FinancialTrackerPage extends StatefulWidget {
   const FinancialTrackerPage({super.key});
+
+  @override
+  State<FinancialTrackerPage> createState() => _FinancialTrackerPageState();
+}
+
+class _FinancialTrackerPageState extends State<FinancialTrackerPage> {
+
+  // Temp records
 
   @override
   Widget build(BuildContext context) {
@@ -9,9 +17,16 @@ class FinancialTrackerPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Financial Tracker'),
       ),
-      body: const Center(
-        child: Text('Financial Tracker Page'),
+
+      // List of cash flow
+      body: ListView.builder(
+        itemCount: 1,
+        itemBuilder: (BuildContext context, int index) {
+          return Container();
+        },
       ),
+
+      floatingActionButton: IconButton(onPressed: () {}, icon: Icon(Icons.add)),
     );
   }
 }

@@ -9,7 +9,7 @@ class ShoppingList extends HiveObject{
   final String id;
 
   @HiveField(1)
-   bool isSelected;
+  bool isSelected;
 
   @HiveField(2)
   String name;

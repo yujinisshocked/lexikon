@@ -20,9 +20,6 @@ class Todo {
   final TodoStatus status;
 
   @HiveField(5)
-  final DateTime? reminderAt;
-
-  @HiveField(6)
   final int sortOrder;
 
   const Todo({
@@ -31,7 +28,6 @@ class Todo {
     required this.createdAt,
     required this.updatedAt,
     this.status = TodoStatus.incomplete,
-    this.reminderAt,
     this.sortOrder = 0,
   });
 
@@ -41,7 +37,6 @@ class Todo {
     DateTime? createdAt,
     DateTime? updatedAt,
     TodoStatus? status,
-    Object? reminderAt = _unset,
     int? sortOrder,
   }) {
     return Todo(
@@ -50,14 +45,9 @@ class Todo {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       status: status ?? this.status,
-      reminderAt: reminderAt == _unset
-          ? this.reminderAt
-          : reminderAt as DateTime?,
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }
-
-static const _unset = Object();
 }
 
 @HiveType(typeId: 2)
