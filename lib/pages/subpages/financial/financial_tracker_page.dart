@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/utils/controllers/finance_controller.dart';
+import 'package:lexikon/utils/helpers/platform_helpers.dart';
 import 'package:lexikon/utils/models/models.dart';
+
+bool isDesktop = PlatformHelpers().isDesktop();
 
 class FinancialTrackerPage extends ConsumerStatefulWidget {
   const FinancialTrackerPage({super.key});
@@ -423,6 +426,37 @@ class _FinancialTrackerPageState extends ConsumerState<FinancialTrackerPage> {
 
   // -- Add Transaction
 
+  // Remove Transaction --
+
+  Future<void> deleteRecord(String id, String name) async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Are you sure you want to remove this transaction?"),
+          content: Text(name),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await ref
+                    .read(financeRecordsControllerProvider.notifier)
+                    .deleteRecord(id);
+              },
+              child: Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // -- Remove Transaction
+
   // Transactions --
 
   List<FinanceRecordsDetails> recordsForDate(DateTime date) {
@@ -632,64 +666,80 @@ class _FinancialTrackerPageState extends ConsumerState<FinancialTrackerPage> {
                         ),
 
                         for (final record in recordsForDate(date))
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
+                          InkWell(
+                            onLongPress: () {
+                              !isDesktop
+                                  ? deleteRecord(record.id, record.description)
+                                  : null;
+                            },
 
-                            title: Text(
-                              record.description,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight(800),
-                              ),
-                            ),
+                            onSecondaryTap: () {
+                              isDesktop
+                                  ? deleteRecord(record.id, record.description)
+                                  : null;
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
 
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  typeName(record.type),
+                                title: Text(
+                                  record.description,
                                   style: TextStyle(
-                                    color: record.type == FinanceType.income
-                                        ? Colors.green
-                                        : Colors.red,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight(800),
                                   ),
                                 ),
 
-                                if (record.type != FinanceType.income)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: getCategoryColor(
-                                            context,
-                                            record.category,
-                                          ),
-                                          shape: BoxShape.circle,
-                                        ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      typeName(record.type),
+                                      style: TextStyle(
+                                        color: record.type == FinanceType.income
+                                            ? Colors.green
+                                            : Colors.red,
                                       ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        categoryName(record.category),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ],
-                                  ),
-                              ],
-                            ),
+                                    ),
 
-                            trailing: Text(
-                              '${record.type == FinanceType.income ? '+' : '-'} '
-                              'RM ${formatAmount(record.amount)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: record.type == FinanceType.income
-                                    ? Theme.of(context).colorScheme.primary
-                                    : null,
+                                    if (record.type != FinanceType.income)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: BoxDecoration(
+                                              color: getCategoryColor(
+                                                context,
+                                                record.category,
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            categoryName(record.category),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+
+                                trailing: Text(
+                                  '${record.type == FinanceType.income ? '+' : '-'} '
+                                  'RM ${formatAmount(record.amount)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: record.type == FinanceType.income
+                                        ? Theme.of(context).colorScheme.primary
+                                        : null,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

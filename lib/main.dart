@@ -15,6 +15,8 @@ import 'package:lexikon/pages/subpages/shopping/shopping_list_edit_page.dart';
 import 'package:lexikon/pages/subpages/budget/budget_calculator_page.dart';
 import 'package:lexikon/pages/subpages/financial/financial_tracker_page.dart';
 
+bool isDesktop = PlatformHelpers().isDesktop();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -45,8 +47,6 @@ class Lexikon extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    bool isDesktop = PlatformHelpers().isDesktop();
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: isDesktop ? const DesktopView() : const MainView(),

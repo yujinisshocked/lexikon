@@ -5,6 +5,8 @@ import 'package:lexikon/utils/helpers/platform_helpers.dart';
 import 'package:lexikon/assets/widgets/widgets.dart';
 import 'package:lexikon/utils/helpers/variables_helpers.dart';
 
+bool isDesktop = PlatformHelpers().isDesktop();
+
 class MainView extends StatefulWidget {
   const MainView({super.key});
 
@@ -15,18 +17,11 @@ class MainView extends StatefulWidget {
 class _MainViewState extends State<MainView> {
   // Pages index
   int selectedIndex = 0;
-  bool isDesktop = PlatformHelpers().isDesktop();
 
-  final List<Widget> _pages = [
-    const MainMenu(),
-    const SettingsPage(),
-  ];
+  final List<Widget> _pages = [const MainMenu(), const SettingsPage()];
 
-  final List<String> _title = [
-    "Main Menu",
-    "Settings",
-  ];
-  
+  final List<String> _title = ["Main Menu", "Settings"];
+
   void changePage(int index) {
     setState(() {
       selectedIndex = index;
@@ -36,20 +31,14 @@ class _MainViewState extends State<MainView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_title[selectedIndex]),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(_title[selectedIndex]), centerTitle: true),
 
       body: _pages[selectedIndex],
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
         items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.menu), 
-            label: "Menu"
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.menu), label: "Menu"),
 
           const BottomNavigationBarItem(
             icon: Icon(Icons.settings),
@@ -85,9 +74,8 @@ class _DesktopViewState extends State<DesktopView> {
       selectedIndex = index;
       currDesktop = features[index]['page'];
     });
-
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,14 +83,15 @@ class _DesktopViewState extends State<DesktopView> {
         children: [
           SideBar(),
           FeatureBar(
-            searchController: searchController, 
-            features: features, 
+            searchController: searchController,
+            features: features,
             onTap: onTap,
-            selectedIndex: selectedIndex, 
+            selectedIndex: selectedIndex,
             featureName: '',
           ),
           DesktopMenu(
-            currDesktop: currDesktop ?? Center(child: Text("Please select a feature."),),
+            currDesktop:
+                currDesktop ?? Center(child: Text("Please select a feature.")),
           ),
         ],
       ),
@@ -124,19 +113,11 @@ class _SideBarState extends State<SideBar> {
     return Expanded(
       flex: 5,
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black,
-        ),
+        decoration: BoxDecoration(color: Colors.black),
         child: Column(
           children: [
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.menu),
-            ),
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.settings),
-            ),
+            IconButton(onPressed: () {}, icon: Icon(Icons.menu)),
+            IconButton(onPressed: () {}, icon: Icon(Icons.settings)),
           ],
         ),
       ),
@@ -179,20 +160,20 @@ class _FeatureBarState extends State<FeatureBar> {
         body: Column(
           // Search Bar
           children: [
-            SearchBar(searchController: widget.searchController,),
+            SearchBar(searchController: widget.searchController),
             Expanded(
               child: ListView.builder(
                 itemCount: widget.features.length,
                 itemBuilder: (context, index) {
                   return Features(
                     onTap: () => widget.onTap(index),
-                    featureName: widget.features[index]['label'], 
+                    featureName: widget.features[index]['label'],
                     icon: widget.features[index]['icon'],
                     isActive: widget.selectedIndex == index,
                   );
-                }
+                },
               ),
-            )
+            ),
           ],
           // Features
         ),
