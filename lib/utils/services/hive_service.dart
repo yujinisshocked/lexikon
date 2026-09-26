@@ -6,6 +6,7 @@ part 'hive_service_todo.dart';
 part 'hive_service_notes.dart';
 part 'hive_service_shopping_lists.dart';
 part 'hive_service_shopping_items.dart';
+part 'hive_service_finance_tracker.dart';
 
 class HiveService {
   // Initialize Hive adapters
@@ -17,7 +18,8 @@ class HiveService {
     Hive.registerAdapter(ShoppingItemAdapter()); // t4
     Hive.registerAdapter(FinanceRecordsDetailsAdapter()); //t5
     Hive.registerAdapter(FinanceTypeAdapter()); //t6
-    Hive.registerAdapter(FinanceCategoryAdapter()); //t6
+    Hive.registerAdapter(FinanceCategoryAdapter()); //t7
+    Hive.registerAdapter(FinanceCategoryBudgetAdapter()); // t8
   }
 
   // Get a Hive box by name

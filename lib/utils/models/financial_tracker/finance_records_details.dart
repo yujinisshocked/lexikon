@@ -2,10 +2,9 @@ import 'package:hive/hive.dart';
 
 part 'finance_records_details.g.dart';
 
-
 // Records for each transaction
 @HiveType(typeId: 5)
-class FinanceRecordsDetails extends HiveObject{
+class FinanceRecordsDetails extends HiveObject {
   @HiveField(0)
   final String id;
 
@@ -17,38 +16,46 @@ class FinanceRecordsDetails extends HiveObject{
 
   @HiveField(3)
   double amount;
-  
+
+  @HiveField(4)
+  FinanceCategory category;
+
+  @HiveField(5)
+  String description;
+
   FinanceRecordsDetails({
     required this.id,
     required this.createdAt,
     required this.type,
     required this.amount,
+    required this.category,
+    required this.description,
   });
 }
 
 @HiveType(typeId: 6)
 enum FinanceType {
   @HiveField(0)
-  income, 
+  income,
 
   @HiveField(1)
-  expense, 
-  
+  expense,
+
   @HiveField(2)
-  debt
+  debt,
 }
 
 @HiveType(typeId: 7)
-enum FinanceCategory { 
+enum FinanceCategory {
   @HiveField(0)
-  needs, 
-  
+  needs,
+
   @HiveField(1)
-  wants, 
-  
+  wants,
+
   @HiveField(2)
-  investments, 
-  
+  investments,
+
   @HiveField(3)
-  savings 
+  savings,
 }

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/mainview.dart';
 import 'package:lexikon/utils/helpers/platform_helpers.dart';
-import 'package:lexikon/utils/models/shopping_list/shopping_item.dart';
-import 'package:lexikon/utils/models/shopping_list/shopping_list.dart';
-import 'package:lexikon/utils/models/todo.dart';
+import 'package:lexikon/utils/models/models.dart';
 import 'package:lexikon/utils/services/hive_service.dart';
-import 'package:lexikon/utils/models/note.dart';
 import 'package:lexikon/pages/subpages/notes/note_list_page.dart';
 import 'package:lexikon/pages/subpages/notes/note_edit_page.dart';
 import 'package:lexikon/pages/subpages/habits/habit_tracking_page.dart';
@@ -19,6 +17,8 @@ import 'package:lexikon/pages/subpages/financial/financial_tracker_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Initialize Hive
   await Hive.initFlutter();
@@ -34,8 +34,8 @@ Future<void> main() async {
   await Hive.openBox<ShoppingList>('LEXIKON_SHOPPING');
   await Hive.openBox<ShoppingItem>('LEXIKON_SHOPPING_ITEM');
   await Hive.openBox('LEXIKON_BUDGET');
-  await Hive.openBox('LEXIKON_FINANCIAL');
-
+  await Hive.openBox<FinanceRecordsDetails>('LEXIKON_FINANCIAL');
+  await Hive.openBox<FinanceCategoryBudget>('LEXIKON_FINANCE_CATEGORY_BUDGET');
 
   runApp(const ProviderScope(child: Lexikon()));
 }
@@ -63,4 +63,3 @@ class Lexikon extends ConsumerWidget {
     );
   }
 }
-

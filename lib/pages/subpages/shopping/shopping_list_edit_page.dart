@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lexikon/pages/subpages/shopping/shopping_list_dialog.dart';
+import 'package:lexikon/pages/subpages/shopping/shopping_list_tile_widget.dart';
 import 'package:lexikon/utils/controllers/shopping_controller.dart';
 import 'package:lexikon/utils/models/shopping_list/shopping_item.dart';
 import 'package:lexikon/utils/models/shopping_list/shopping_list.dart';
@@ -14,8 +14,9 @@ class ShoppingListEditPage extends ConsumerStatefulWidget {
       _ShoppingListEditPageState();
 }
 
-class _ShoppingListEditPageState
-    extends ConsumerState<ShoppingListEditPage> {
+class _ShoppingListEditPageState extends ConsumerState<ShoppingListEditPage> {
+  // State --
+
   bool isAdding = false;
 
   String selectedId = '';
@@ -23,21 +24,24 @@ class _ShoppingListEditPageState
 
   final _itemController = TextEditingController();
 
+  // -- State
+
+  // Shopping List --
+
   Future<ShoppingList?> getShoppingListDetails(String id) async {
-    return await ref
+    return ref
         .read(shoppingControllerProvider.notifier)
         .getShoppingListDetails(id);
   }
 
   Future<void> loadSelectedList() async {
-    final controller =
-        ref.read(shoppingControllerProvider.notifier);
+    final controller = ref.read(shoppingControllerProvider.notifier);
 
     final id = await controller.loadSelectedList();
 
-    if (id.trim().isEmpty) {
-      if (!mounted) return;
+    if (!mounted) return;
 
+    if (id.trim().isEmpty) {
       setState(() {
         selectedId = '';
         selectedList = null;
@@ -64,13 +68,14 @@ class _ShoppingListEditPageState
         .updateShoppingList(selectedList!);
   }
 
+  // -- Shopping List
+
+  // Items --
+
   Future<void> addItem(String name) async {
     if (selectedList == null) return;
 
-    final item = ShoppingItem(
-      name: name,
-      quantity: 1,
-    );
+    final item = ShoppingItem(name: name, quantity: 1);
 
     selectedList!.items.add(item);
 
@@ -87,14 +92,54 @@ class _ShoppingListEditPageState
     await loadSelectedList();
   }
 
+  Future<void> updateItem(ShoppingItem item) async {
+    await updateList();
+    await loadSelectedList();
+  }
+
+  // -- Items
+
+  // Reset --
+
   Future<void> resetList(String id) async {
     try {
       await ref.read(shoppingControllerProvider.notifier).resetList(id);
-      debugPrint("ResetList!");
-    } catch(e) {
-      debugPrint("Reset List Failed: $e");
+
+      await loadSelectedList();
+    } catch (e) {
+      debugPrint('Reset list failed: $e');
     }
   }
+
+  // -- Reset
+
+  // Add Item Input --
+
+  Future<void> submitNewItem() async {
+    final name = _itemController.text.trim();
+
+    if (name.isEmpty) return;
+
+    await addItem(name);
+
+    if (!mounted) return;
+
+    setState(() {
+      isAdding = false;
+      _itemController.clear();
+    });
+  }
+
+  void cancelAdding() {
+    setState(() {
+      isAdding = false;
+      _itemController.clear();
+    });
+  }
+
+  // -- Add Item Input
+
+  // Lifecycle --
 
   @override
   void initState() {
@@ -108,399 +153,166 @@ class _ShoppingListEditPageState
     super.dispose();
   }
 
+  // -- Lifecycle
+
+  // UI --
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              selectedList?.name ?? '',
-            ),
-            TextButton(
+        title: Text(selectedList?.name ?? ''),
+        actions: [
+          // Reset --
+
+          if (selectedList != null)
+            IconButton(
+              tooltip: 'Reset',
+              icon: const Icon(Icons.restart_alt),
               onPressed: () {
-                showDialog(
-                  context: context, 
+                showDialog<void>(
+                  context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: Text("Are you sure you want to reset this list?"),
-                      content: Text("(Check marks will be removed)"),
+                      title: const Text('Reset this list?'),
+                      content: const Text(
+                        'All checked items will be unchecked.',
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                          }, 
-                          child: Text("Cancel")
+                          },
+                          child: const Text('Cancel'),
                         ),
-                        TextButton(
+                        FilledButton(
                           onPressed: () async {
-                            setState(() {
-                              resetList(selectedId);
-                            });
-                            if(context.mounted) Navigator.pop(context);
-                          }, 
-                          child: Text("Reset", style: TextStyle(color: Colors.red),)
-                        )
+                            await resetList(selectedId);
+
+                            if (!context.mounted) return;
+
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Reset'),
+                        ),
                       ],
                     );
-                  }
+                  },
                 );
-              }, 
-              child: Text("Reset")
-            )
-          ],
-        ),
+              },
+            ),
+
+          // -- Reset
+        ],
       ),
 
-      floatingActionButton: IconButton(
-        icon: const Icon(Icons.visibility),
+      body: selectedList == null
+          ? const _EmptyState()
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+              children: [
+                // Items --
+
+                for (final item in selectedList!.items)
+                  ShoppingListItemTile(
+                    key: ValueKey(item),
+                    item: item,
+                    onChanged: () async {
+                      await updateItem(item);
+                    },
+                    onDelete: () async {
+                      await deleteItem(item);
+                    },
+                  ),
+
+                // -- Items
+
+                // Add Item --
+                if (isAdding)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _itemController,
+                            autofocus: true,
+                            decoration: const InputDecoration(
+                              hintText: 'Item name',
+                            ),
+                            onSubmitted: (_) {
+                              submitNewItem();
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: cancelAdding,
+                          icon: const Icon(Icons.close),
+                        ),
+                        IconButton(
+                          onPressed: submitNewItem,
+                          icon: const Icon(Icons.check),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          isAdding = true;
+                        });
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add item'),
+                    ),
+                  ),
+
+                // -- Add Item
+              ],
+            ),
+
+      // List Selector --
+      floatingActionButton: FloatingActionButton.small(
+        tooltip: 'Shopping lists',
         onPressed: () async {
           final result = await showDialog<String>(
             context: context,
-            builder: (context) => const ShoppingListDialog(),
+            builder: (context) {
+              return const ShoppingListDialog();
+            },
           );
 
           if (result == null) return;
 
           await loadSelectedList();
         },
+        child: const Icon(Icons.list),
       ),
 
-      body: selectedId.trim().isEmpty
-          ? const _EmptyState()
-          : ListView.builder(
-              itemCount: selectedList!.items.length + 1,
-              itemBuilder: (context, index) {
-                // Shopping items
-                if (index < selectedList!.items.length) {
-                  final item = selectedList!.items[index];
-
-                  return _ShoppingItemWidget(
-                    item: item,
-
-                    onTap: () {},
-
-                    onChanged: () async {
-                      await updateList();
-
-                      if (!mounted) return;
-
-                      setState(() {});
-                    },
-
-                    onDelete: () async {
-                      await deleteItem(item);
-                    },
-                  );
-                }
-
-                // Add item input
-                if (isAdding) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: TextField(
-                            controller: _itemController,
-                            autofocus: true,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: 'Item name',
-                            ),
-                            onSubmitted: (value) async {
-                              final name = value.trim();
-                          
-                              if (name.isEmpty) return;
-                          
-                              await addItem(name);
-                          
-                              if (!mounted) return;
-                          
-                              setState(() {
-                                isAdding = false;
-                                _itemController.clear();
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-
-                      // Cancel
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            isAdding = false;
-                            _itemController.clear();
-                          });
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
-
-                      // Save
-                      IconButton(
-                        onPressed: () async {
-                          final name =
-                              _itemController.text.trim();
-
-                          if (name.isEmpty) return;
-
-                          await addItem(name);
-
-                          if (!mounted) return;
-
-                          setState(() {
-                            isAdding = false;
-                            _itemController.clear();
-                          });
-                        },
-                        icon: const Icon(Icons.check),
-                      ),
-                    ],
-                  );
-                }
-
-                // Add button
-                return IconButton(
-                  onPressed: () {
-                    setState(() {
-                      isAdding = true;
-                    });
-                  },
-                  icon: const Icon(Icons.add),
-                );
-              },
-            ),
+      // -- List Selector
     );
   }
+
+  // -- UI
 }
 
-class _ShoppingItemWidget extends StatefulWidget {
-  final ShoppingItem item;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-  final Future<void> Function() onChanged;
-
-  const _ShoppingItemWidget({
-    required this.item,
-    required this.onTap,
-    required this.onDelete,
-    required this.onChanged,
-  });
-
-  @override
-  State<_ShoppingItemWidget> createState() =>
-      _ShoppingItemWidgetState();
-}
-
-class _ShoppingItemWidgetState
-    extends State<_ShoppingItemWidget> {
-  late final TextEditingController _controller;
-  late final TextEditingController _qtyController;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = TextEditingController(
-      text: widget.item.name,
-    );
-
-    _qtyController = TextEditingController(
-      text: widget.item.quantity.toString(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _qtyController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _updateIsBought(bool value) async {
-    setState(() {
-      widget.item.isBought = value;
-    });
-
-    await widget.onChanged();
-  }
-
-  Future<void> _updateName(String value) async {
-    final name = value.trim();
-
-    if (name.isEmpty) return;
-
-    widget.item.name = name;
-
-    await widget.onChanged();
-  }
-
-  Future<void> _updateQuantity(String value) async {
-    final quantity = int.tryParse(value);
-
-    if (quantity == null || quantity < 1) {
-      setState(() {
-        _qtyController.text =
-            widget.item.quantity.toString();
-        _qtyController.selection =
-            TextSelection.collapsed(
-          offset: _qtyController.text.length,
-        );
-      });
-
-      return;
-    }
-
-    widget.item.quantity = quantity;
-
-    await widget.onChanged();
-  }
-
-  Future<void> _reduceQuantity() async {
-    final current =
-        int.tryParse(_qtyController.text) ?? 1;
-
-    if (current <= 1) return;
-
-    final newValue = current - 1;
-
-    setState(() {
-      widget.item.quantity = newValue;
-      _qtyController.text = newValue.toString();
-    });
-
-    await widget.onChanged();
-  }
-
-  Future<void> _addQuantity() async {
-    final current =
-        int.tryParse(_qtyController.text) ?? 1;
-
-    final newValue = current + 1;
-
-    setState(() {
-      widget.item.quantity = newValue;
-      _qtyController.text = newValue.toString();
-    });
-
-    await widget.onChanged();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // Checkbox
-        Expanded(
-          flex: 10,
-          child: Checkbox(
-            value: widget.item.isBought,
-            onChanged: (value) {
-              if (value != null) {
-                _updateIsBought(value);
-              }
-            },
-          ),
-        ),
-    
-        // Item name
-        Expanded(
-          flex: 45,
-          child: TextField(
-            textAlign: TextAlign.center,
-            controller: _controller,
-            onSubmitted: _updateName,
-            decoration: const InputDecoration(
-              border: UnderlineInputBorder(),
-            ),
-          ),
-        ),
-    
-        // Quantity
-        Expanded(
-          flex: 30,
-          child: quantityCounter(),
-        ),
-    
-        // Delete
-        Expanded(
-          flex: 10,
-          child: IconButton(
-            onPressed: () {
-              showDialog(
-                context: context, 
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text("Are you sure you want to remove ${widget.item.name}?"),
-                    actions: [
-                      IconButton(
-                        onPressed: () {
-                          if (mounted) {
-                            Navigator.pop(context);
-                          }
-                        }, 
-                        icon: Icon(Icons.close)
-                      ),
-                      IconButton(onPressed: widget.onDelete, icon: Icon(Icons.check))
-                    ],
-                  );
-                }
-              );
-            },
-            icon: const Icon(Icons.close),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // TODO: Overflow issue
-  Widget quantityCounter() {
-    return Row(
-      children: [
-        // Reduce
-        IconButton(
-          onPressed: _reduceQuantity,
-          icon: const Icon(Icons.remove),
-        ),
-
-        // Quantity
-        Expanded(
-          child: TextField(
-            controller: _qtyController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
-            textAlign: TextAlign.center,
-            onSubmitted: _updateQuantity,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-            ),
-          ),
-        ),
-
-        // Increase
-        IconButton(
-          onPressed: _addQuantity,
-          icon: const Icon(Icons.add),
-        ),
-      ],
-    );
-  }
-}
+// Empty State --
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Text(
         'Load a list to continue',
+        style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
   }
 }
+
+// -- Empty State

@@ -21,13 +21,15 @@ class FinanceRecordsDetailsAdapter extends TypeAdapter<FinanceRecordsDetails> {
       createdAt: fields[1] as String,
       type: fields[2] as FinanceType,
       amount: fields[3] as double,
+      category: fields[4] as FinanceCategory,
+      description: fields[5] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, FinanceRecordsDetails obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -35,7 +37,11 @@ class FinanceRecordsDetailsAdapter extends TypeAdapter<FinanceRecordsDetails> {
       ..writeByte(2)
       ..write(obj.type)
       ..writeByte(3)
-      ..write(obj.amount);
+      ..write(obj.amount)
+      ..writeByte(4)
+      ..write(obj.category)
+      ..writeByte(5)
+      ..write(obj.description);
   }
 
   @override
