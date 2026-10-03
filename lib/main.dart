@@ -31,7 +31,8 @@ Future<void> main() async {
   // Open Hive boxes
   await Hive.openBox('LEXIKON_SETTINGS');
   await Hive.openBox<Note>('LEXIKON_NOTES');
-  await Hive.openBox('LEXIKON_HABITS');
+  await Hive.openBox<Habit>('LEXIKON_HABITS');
+  await Hive.openBox<HabitRecord>('LEXIKON_HABITS');
   await Hive.openBox<Todo>('LEXIKON_TODOS');
   await Hive.openBox<ShoppingList>('LEXIKON_SHOPPING');
   await Hive.openBox<ShoppingItem>('LEXIKON_SHOPPING_ITEM');

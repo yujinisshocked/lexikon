@@ -58,10 +58,7 @@ class _MainMenuState extends State<MainMenu> {
 
 class DesktopMenu extends StatefulWidget {
   final Widget currDesktop;
-  const DesktopMenu({
-    super.key,
-    required this.currDesktop,
-  });
+  const DesktopMenu({super.key, required this.currDesktop});
 
   @override
   State<DesktopMenu> createState() => _DesktopMenuState();
@@ -73,9 +70,7 @@ class _DesktopMenuState extends State<DesktopMenu> {
     return Expanded(
       flex: 60,
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-        ),
+        decoration: BoxDecoration(color: Colors.white),
         child: widget.currDesktop,
       ),
     );

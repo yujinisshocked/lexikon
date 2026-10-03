@@ -20,6 +20,12 @@ class HiveService {
     Hive.registerAdapter(FinanceTypeAdapter()); //t6
     Hive.registerAdapter(FinanceCategoryAdapter()); //t7
     Hive.registerAdapter(FinanceCategoryBudgetAdapter()); // t8
+    Hive.registerAdapter(HabitAdapter()); // t9
+    Hive.registerAdapter(HabitTypeAdapter()); // t10
+    Hive.registerAdapter(HabitFrequencyAdapter()); // t11
+    Hive.registerAdapter(HabitScheduledDaysAdapter()); // t12
+    Hive.registerAdapter(HabitRecordAdapter()); // t13
+    
   }
 
   // Get a Hive box by name

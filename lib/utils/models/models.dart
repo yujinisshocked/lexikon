@@ -4,3 +4,5 @@ export 'financial_tracker/finance_records_details.dart';
 export 'financial_tracker/finance_budget.dart';
 export 'note.dart';
 export 'todo.dart';
+export 'habits/habit.dart';
+export 'habits/habit_record.dart';
